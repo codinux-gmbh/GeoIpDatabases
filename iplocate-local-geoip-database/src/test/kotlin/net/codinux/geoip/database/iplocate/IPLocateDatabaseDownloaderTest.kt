@@ -17,11 +17,11 @@ class IPLocateDatabaseDownloaderTest {
 
     @Test
     fun downloadIpToCountryCsvDatabase() {
-        val destination = getDownloadDestination("ip-to-country.csv.zip")
+        val destination = getDownloadDestination("ip-to-country.csv")
 
         val result = underTest.downloadIpToCountryCsvDatabase(destination)
 
-        assertDatabase(result, destination, 6_780_000)
+        assertDatabase(result, destination, 55_000_000)
     }
 
     @Test
@@ -36,11 +36,11 @@ class IPLocateDatabaseDownloaderTest {
 
     @Test
     fun downloadIpToAsnCsvDatabase() {
-        val destination = getDownloadDestination("ip-to-asn.csv.zip")
+        val destination = getDownloadDestination("ip-to-asn.csv")
 
         val result = underTest.downloadIpToAsnCsvDatabase(destination)
 
-        assertDatabase(result, destination, 11_800_000)
+        assertDatabase(result, destination, 93_000_000)
     }
 
     @Test

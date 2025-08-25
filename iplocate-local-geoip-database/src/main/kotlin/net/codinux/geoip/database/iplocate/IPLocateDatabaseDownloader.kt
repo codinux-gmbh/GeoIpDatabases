@@ -6,7 +6,14 @@ import net.dankito.web.client.KtorWebClient
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.get
 import java.nio.file.Path
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import kotlin.io.path.Path
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteExisting
+import kotlin.io.path.inputStream
+import kotlin.io.path.outputStream
 import kotlin.io.path.writeBytes
 
 open class IPLocateDatabaseDownloader(
@@ -26,14 +33,14 @@ open class IPLocateDatabaseDownloader(
 
 
     open fun downloadIpToCountryCsvDatabase(downloadTo: Path) =
-        download(CountryCsvDownloadUrl, downloadTo)
+        downloadAndUnzip(CountryCsvDownloadUrl, downloadTo)
 
     open fun downloadIpToCountryMaxMindDatabase(downloadTo: Path) =
         download(CountryMaxMindDatabaseUrl, downloadTo)
 
 
     open fun downloadIpToAsnCsvDatabase(downloadTo: Path) =
-        download(AsnCsvDownloadUrl, downloadTo)
+        downloadAndUnzip(AsnCsvDownloadUrl, downloadTo)
 
     open fun downloadIpToAsnMaxMindDatabase(downloadTo: Path) =
         download(AsnMaxMindDatabaseUrl, downloadTo)
@@ -59,5 +66,38 @@ open class IPLocateDatabaseDownloader(
         log.error(e) { "Could not download IPLocate.io database from '$downloadUrl'" }
         false
     }
+
+    protected open fun downloadAndUnzip(downloadUrl: String, unzipTo: Path): Boolean = try {
+        val downloadTo = Path(unzipTo.absolutePathString() + ".zip")
+        if (download(downloadUrl, downloadTo)) {
+            unzip(downloadTo, unzipTo)
+        } else {
+            false
+        }
+    } catch (e: Throwable) {
+        log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }
+        false
+    }
+
+    protected fun unzip(zipFile: Path, targetFile: Path): Boolean =
+        ZipInputStream(zipFile.inputStream()).use { zipInputStream ->
+            // this implementation assumes there's only one fle / ZipEntry in .zip file, so we don't do a while (entry != null) { }
+            val entry: ZipEntry? = zipInputStream.nextEntry
+            if (entry != null) {
+                targetFile.parent.createDirectories()
+
+                targetFile.outputStream().use { outputStream ->
+                    zipInputStream.copyTo(outputStream)
+                }
+
+                zipInputStream.closeEntry()
+
+                zipFile.deleteExisting()
+
+                true
+            } else {
+                false
+            }
+        }
 
 }

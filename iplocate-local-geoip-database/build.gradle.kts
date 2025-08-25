@@ -14,7 +14,7 @@ kotlin {
 
 val coroutinesVersion: String by project
 
-val maxMindGeoIpVersion: String by project
+val maxMindDbVersion: String by project
 
 val webClientVersion: String by project
 val klfVersion: String by project
@@ -24,7 +24,7 @@ val assertKVersion: String by project
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
-    implementation("com.maxmind.geoip2:geoip2:$maxMindGeoIpVersion")
+    implementation("com.maxmind.db:maxmind-db:$maxMindDbVersion")
 
     api("net.dankito.web:web-client-api:$webClientVersion")
 //    implementation("net.dankito.web:java-http-client-web-client:$webClientVersion")

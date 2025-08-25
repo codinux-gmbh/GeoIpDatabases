@@ -13,7 +13,6 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
 ) {
 
     // we cannot use DatabaseReader as this one checks if it's a .mmdb file from MaxMind
-//    protected val countryReader by lazy { DatabaseReader.Builder(countryDatabaseFile.inputStream()).build() }
     protected val countryReader by lazy { Reader(countryDatabaseFile.toFile()) }
 
     protected val asnReader by lazy { Reader(asnDatabaseFile.toFile()) }

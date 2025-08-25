@@ -21,3 +21,5 @@ rootProject.name = "GeoIpDatabases"
 
 
 include("geoip-database-api")
+
+include("iplocate-local-geoip-database")

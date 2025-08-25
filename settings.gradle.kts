@@ -18,3 +18,6 @@ plugins {
 
 
 rootProject.name = "GeoIpDatabases"
+
+
+include("geoip-database-api")

@@ -1,7 +1,9 @@
 package net.codinux.geoip.database.iplocate
 
 import com.maxmind.db.Reader
+import net.codinux.geoip.database.iplocate.model.IPLocateAsnResponse
 import net.codinux.geoip.database.iplocate.model.IPLocateCountryResponse
+import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
 
@@ -14,19 +16,44 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
 //    protected val countryReader by lazy { DatabaseReader.Builder(countryDatabaseFile.inputStream()).build() }
     protected val countryReader by lazy { Reader(countryDatabaseFile.toFile()) }
 
+    protected val asnReader by lazy { Reader(asnDatabaseFile.toFile()) }
 
-    fun lookupCountry(ipString: String): IPLocateCountryResponse? {
-        val inetAddress = InetAddress.getByName(ipString)
+    protected val log by logger()
 
-        val databaseRecord = countryReader.getRecord(inetAddress, Map::class.java)
 
-        return (databaseRecord.data as? Map<String, String>)?.let { countryResponseMap ->
+    fun lookupCountry(ipString: String): IPLocateCountryResponse? =
+        readRecord(ipString, countryReader) { countryRecordMap ->
             IPLocateCountryResponse(
-                countryCode = countryResponseMap["country_code"]!!,
-                countryName = countryResponseMap["country_name"]!!,
-                continentCode = countryResponseMap["continent_code"]!!,
+                countryCode = countryRecordMap["country_code"]!!,
+                countryName = countryRecordMap["country_name"]!!,
+                continentCode = countryRecordMap["continent_code"]!!,
             )
         }
+
+    fun lookupAsn(ipString: String): IPLocateAsnResponse? =
+        readRecord(ipString, asnReader) { asnRecordMap ->
+            IPLocateAsnResponse(
+                name = asnRecordMap["name"]!!,
+                organization = asnRecordMap["org"]!!,
+                domain = asnRecordMap["domain"]!!,
+                countryCode = asnRecordMap["country_code"]!!,
+                asn = asnRecordMap["asn"]!!,
+            )
+        }
+
+
+    protected open fun <T> readRecord(ipString: String, reader: Reader, mapper: (Map<String, String>) -> T): T? = try {
+        val inetAddress = InetAddress.getByName(ipString)
+
+        val databaseRecord = reader.getRecord(inetAddress, Map::class.java)
+
+        @Suppress("UNCHECKED_CAST")
+        (databaseRecord.data as? Map<String, String>)?.let { databaseRecordMap ->
+            mapper(databaseRecordMap)
+        }
+    } catch (e: Throwable) {
+        log.error(e) { "Could not retrieve record from IPLocate.io database from IP $ipString" }
+        null
     }
 
 }

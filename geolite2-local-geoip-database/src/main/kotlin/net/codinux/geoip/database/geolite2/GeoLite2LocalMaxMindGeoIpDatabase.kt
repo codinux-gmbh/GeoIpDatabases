@@ -1,9 +1,11 @@
 package net.codinux.geoip.database.geolite2
 
 import com.maxmind.geoip2.DatabaseReader
+import com.maxmind.geoip2.model.AsnResponse
 import com.maxmind.geoip2.model.CityResponse
 import com.maxmind.geoip2.model.CountryResponse
 import net.codinux.geoip.database.geolite2.model.Country
+import net.codinux.geoip.database.geolite2.model.GeoLite2AsnResponse
 import net.codinux.geoip.database.geolite2.model.GeoLite2CityResponse
 import net.codinux.geoip.database.geolite2.model.GeoLite2CountryResponse
 import net.codinux.geoip.database.geolite2.model.Location
@@ -21,6 +23,8 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
 
     protected val cityReader by lazy { DatabaseReader.Builder(cityDatabaseFile.toFile()).build() }
 
+    protected val asnReader by lazy { DatabaseReader.Builder(asnDatabaseFile.toFile()).build() }
+
     private val log by logger()
 
 
@@ -34,6 +38,12 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         val inetAddress = InetAddress.getByName(ipString)
 
         return cityReader.tryCity(inetAddress).map { map(it) }.orElse(null)
+    }
+
+    open fun lookupAsn(ipString: String): GeoLite2AsnResponse? {
+        val inetAddress = InetAddress.getByName(ipString)
+
+        return asnReader.tryAsn(inetAddress).map { map(it) }.orElse(null)
     }
 
 
@@ -59,6 +69,11 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
             names = response.registeredCountry.names,
         ),
         names = response.city.names,
+    )
+
+    protected fun map(response: AsnResponse) = GeoLite2AsnResponse(
+        autonomousSystemNumber = response.autonomousSystemNumber,
+        organization = response.autonomousSystemOrganization
     )
 
     protected fun map(location: com.maxmind.geoip2.record.Location): Location? =

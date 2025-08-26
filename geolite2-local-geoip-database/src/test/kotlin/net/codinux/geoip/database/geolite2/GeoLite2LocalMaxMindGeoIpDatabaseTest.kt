@@ -38,6 +38,16 @@ class GeoLite2LocalMaxMindGeoIpDatabaseTest {
     }
 
 
+    @Test
+    fun lookupAsn() {
+        val result = underTest.lookupAsn("1.0.0.0")
+
+        assertThat(result).isNotNull()
+        assertThat(result!!::autonomousSystemNumber).isEqualTo(13335)
+        assertThat(result::organization).isEqualTo("CLOUDFLARENET")
+    }
+
+
     private fun getResourcePath(resourceFile: String): Path {
         val url = GeoLite2LocalMaxMindGeoIpDatabaseTest::class.java.classLoader.getResource(resourceFile)!!
 

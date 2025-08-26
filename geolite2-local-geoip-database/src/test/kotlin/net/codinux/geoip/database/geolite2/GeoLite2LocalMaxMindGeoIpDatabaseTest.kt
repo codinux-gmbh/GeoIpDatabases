@@ -27,6 +27,17 @@ class GeoLite2LocalMaxMindGeoIpDatabaseTest {
     }
 
 
+    @Test
+    fun lookupCity() {
+        val result = underTest.lookupCity("1.0.0.0")
+
+        assertThat(result).isNotNull()
+        assertThat(result!!.country::countryName).isEqualTo("Australia")
+        assertThat(result.country::countryIsoCode).isEqualTo("AU")
+//        assertThat(result::continentCode).isEqualTo("OC")
+    }
+
+
     private fun getResourcePath(resourceFile: String): Path {
         val url = GeoLite2LocalMaxMindGeoIpDatabaseTest::class.java.classLoader.getResource(resourceFile)!!
 

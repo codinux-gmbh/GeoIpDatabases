@@ -1,4 +1,4 @@
-package net.codinux.geoip.database.geolite2.model
+package net.codinux.geoip.database
 
 data class Location(
     val latitude: Double,

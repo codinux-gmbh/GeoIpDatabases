@@ -5,11 +5,12 @@ import com.maxmind.geoip2.model.AsnResponse
 import com.maxmind.geoip2.model.CityResponse
 import com.maxmind.geoip2.model.CountryResponse
 import net.codinux.geoip.database.AutonomousSystem
+import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
-import net.codinux.geoip.database.geolite2.model.GeoLite2CityResponse
+import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
-import net.codinux.geoip.database.geolite2.model.Location
-import net.codinux.log.logger
+import net.codinux.geoip.database.Location
+import net.codinux.geoip.database.Subdivision
 import java.net.InetAddress
 import java.nio.file.Path
 
@@ -25,42 +26,43 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
 
     protected val asnReader by lazy { DatabaseReader.Builder(asnDatabaseFile.toFile()).build() }
 
-    private val log by logger()
-
 
     open fun lookupCountry(ipString: String): GeoLite2Country? {
         val inetAddress = InetAddress.getByName(ipString)
 
-        return countryReader.tryCountry(inetAddress).map { map(it) }.orElse(null)
+        return countryReader.tryCountry(inetAddress)
+            .map { mapCountry(it) }.orElse(null)
     }
 
-    open fun lookupCity(ipString: String): GeoLite2CityResponse? {
+    open fun lookupCity(ipString: String): City? {
         val inetAddress = InetAddress.getByName(ipString)
 
-        return cityReader.tryCity(inetAddress).map { map(it) }.orElse(null)
+        return cityReader.tryCity(inetAddress)
+            .map { mapCity(it) }.orElse(null)
     }
 
     open fun lookupAsn(ipString: String): AutonomousSystem? {
         val inetAddress = InetAddress.getByName(ipString)
 
-        return asnReader.tryAsn(inetAddress).map { map(it) }.orElse(null)
+        return asnReader.tryAsn(inetAddress)
+            .map { mapAutonomousSystem(it) }.orElse(null)
     }
 
 
-    protected fun map(response: CountryResponse) =
+    protected open fun mapCountry(response: CountryResponse) =
         // - country: The geolocated country where the IP address is actually observed to be located. Preferably use that one. But rarely set.
         // - registeredCountry: The country where the IP address block is registered in the regional internet registry (RIR). Often, but not always, this matches country.
         // - representedCountry: Special case for IPs that represent another country, typically used for military bases. Only set in the full GeoIP2 database.
         mapCountry(response.country, response.registeredCountry, response.continent.code)
 
-    protected fun mapCountry(country: com.maxmind.geoip2.record.Country, registeredCountry: com.maxmind.geoip2.record.Country, continentCode: String?) =
+    protected open fun mapCountry(country: com.maxmind.geoip2.record.Country, registeredCountry: com.maxmind.geoip2.record.Country, continentCode: String?) =
         if (country.isoCode != null) { // country is not always set. Preferably use country, but if it's not set ...
             mapCountry(country, continentCode)
         } else { // ... then use registeredCountry (the country where the IP is registered)
             mapCountry(registeredCountry, continentCode)
         }
 
-    protected fun mapCountry(country: com.maxmind.geoip2.record.Country, continentCode: String?) = GeoLite2Country(
+    protected open fun mapCountry(country: com.maxmind.geoip2.record.Country, continentCode: String?) = GeoLite2Country(
         countryIsoCode = country.isoCode,
         countryName = country.name,
         continent = continentCode?.let { Continent.byCode(continentCode) },
@@ -69,22 +71,25 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         names = country.names,
     )
 
-    protected fun map(response: CityResponse) = GeoLite2CityResponse(
+    protected open fun mapCity(response: CityResponse) = GeoLite2City(
         cityName = response.city.name,
-        postalCode = response.postal?.code,
-        subDivision = response.mostSpecificSubdivision?.name,
-        location = response.location?.let { map(it) },
-        geoNameId = response.city.geoNameId,
         country = mapCountry(response.country, response.registeredCountry, response.continent.code),
+        geoNameId = response.city.geoNameId,
+
+        location = response.location?.let { mapLocation(it) },
+        postalCode = response.postal?.code,
+
+        leastSpecificSubdivision = mapSubdivision(response.leastSpecificSubdivision),
+        mostSpecificSubdivision = mapSubdivision(response.mostSpecificSubdivision),
+
         names = response.city.names,
     )
 
-    protected fun map(response: AsnResponse) = AutonomousSystem(
-        autonomousSystemNumber = response.autonomousSystemNumber,
-        name = response.autonomousSystemOrganization
-    )
+    protected open fun mapSubdivision(subdivision: com.maxmind.geoip2.record.Subdivision?) = subdivision?.let {
+        Subdivision(it.isoCode, it.name, it.geoNameId)
+    }
 
-    protected fun map(location: com.maxmind.geoip2.record.Location): Location? =
+    protected open fun mapLocation(location: com.maxmind.geoip2.record.Location): Location? =
         if (location.latitude == null || location.longitude == null) {
             null
         } else {
@@ -92,5 +97,11 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
                 location.timeZone, location.populationDensity, location.averageIncome
             )
         }
+
+
+    protected open fun mapAutonomousSystem(response: AsnResponse) = AutonomousSystem(
+        autonomousSystemNumber = response.autonomousSystemNumber,
+        name = response.autonomousSystemOrganization
+    )
 
 }

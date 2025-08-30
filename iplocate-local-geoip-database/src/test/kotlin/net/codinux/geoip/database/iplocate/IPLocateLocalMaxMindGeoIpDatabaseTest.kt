@@ -3,6 +3,7 @@ package net.codinux.geoip.database.iplocate
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import net.codinux.geoip.database.Continent
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.test.Test
@@ -33,7 +34,7 @@ class IPLocateLocalMaxMindGeoIpDatabaseTest {
         assertThat(result::organization).isEqualTo("Cloudflare, Inc.")
         assertThat(result::domain).isEqualTo("cloudflare.com")
         assertThat(result::countryCode).isEqualTo("US")
-        assertThat(result::asn).isEqualTo("13335")
+        assertThat(result::autonomousSystemNumber).isEqualTo(13335)
     }
 
 

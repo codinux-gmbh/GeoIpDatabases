@@ -44,7 +44,7 @@ class GeoLite2LocalMaxMindGeoIpDatabaseTest {
 
         assertThat(result).isNotNull()
         assertThat(result!!::autonomousSystemNumber).isEqualTo(13335)
-        assertThat(result::organization).isEqualTo("CLOUDFLARENET")
+        assertThat(result::name).isEqualTo("CLOUDFLARENET")
     }
 
 

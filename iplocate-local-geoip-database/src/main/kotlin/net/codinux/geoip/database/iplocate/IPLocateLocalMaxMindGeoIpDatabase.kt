@@ -1,9 +1,9 @@
 package net.codinux.geoip.database.iplocate
 
 import com.maxmind.db.Reader
+import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
-import net.codinux.geoip.database.iplocate.model.IPLocateAsnResponse
 import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
@@ -30,14 +30,14 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
             )
         }
 
-    fun lookupAsn(ipString: String): IPLocateAsnResponse? =
+    fun lookupAsn(ipString: String): AutonomousSystem? =
         readRecord(ipString, asnReader) { asnRecordMap ->
-            IPLocateAsnResponse(
+            AutonomousSystem(
+                autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
                 name = asnRecordMap["name"]!!,
                 organization = asnRecordMap["org"]!!,
                 domain = asnRecordMap["domain"]!!,
                 countryCode = asnRecordMap["country_code"]!!,
-                asn = asnRecordMap["asn"]!!,
             )
         }
 

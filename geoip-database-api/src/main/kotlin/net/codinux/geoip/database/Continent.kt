@@ -13,5 +13,14 @@ enum class Continent(val code: String) {
 
     NorthAmerica("NA"),
 
-    SouthAmerica("SA"),
+    SouthAmerica("SA")
+    ;
+
+
+    companion object {
+        val byCode: Map<String, Continent> = entries.associateBy(Continent::code)
+
+        fun byCode(code: String): Continent? = byCode[code]
+    }
+
 }

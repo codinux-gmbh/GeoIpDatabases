@@ -22,6 +22,8 @@ val klfVersion: String by project
 val assertKVersion: String by project
 
 dependencies {
+    api(project(":geoip-database-api"))
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
     implementation("com.maxmind.db:maxmind-db:$maxMindDbVersion")

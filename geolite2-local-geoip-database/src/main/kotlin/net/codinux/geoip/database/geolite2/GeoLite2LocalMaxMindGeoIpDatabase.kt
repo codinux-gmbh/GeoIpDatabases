@@ -4,10 +4,10 @@ import com.maxmind.geoip2.DatabaseReader
 import com.maxmind.geoip2.model.AsnResponse
 import com.maxmind.geoip2.model.CityResponse
 import com.maxmind.geoip2.model.CountryResponse
-import net.codinux.geoip.database.geolite2.model.Country
+import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.geolite2.model.GeoLite2AsnResponse
 import net.codinux.geoip.database.geolite2.model.GeoLite2CityResponse
-import net.codinux.geoip.database.geolite2.model.GeoLite2CountryResponse
+import net.codinux.geoip.database.geolite2.model.GeoLite2Country
 import net.codinux.geoip.database.geolite2.model.Location
 import net.codinux.log.logger
 import java.net.InetAddress
@@ -28,7 +28,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     private val log by logger()
 
 
-    open fun lookupCountry(ipString: String): GeoLite2CountryResponse? {
+    open fun lookupCountry(ipString: String): GeoLite2Country? {
         val inetAddress = InetAddress.getByName(ipString)
 
         return countryReader.tryCountry(inetAddress).map { map(it) }.orElse(null)
@@ -47,12 +47,26 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     }
 
 
-    protected fun map(response: CountryResponse) = GeoLite2CountryResponse(
-        countryIsoCode = response.registeredCountry.isoCode,
-        countryName = response.registeredCountry.name,
-        geoNameId = response.registeredCountry.geoNameId,
-        isInEuropeanUnion = response.registeredCountry.isInEuropeanUnion,
-        names = response.registeredCountry.names,
+    protected fun map(response: CountryResponse) =
+        // - country: The geolocated country where the IP address is actually observed to be located. Preferably use that one. But rarely set.
+        // - registeredCountry: The country where the IP address block is registered in the regional internet registry (RIR). Often, but not always, this matches country.
+        // - representedCountry: Special case for IPs that represent another country, typically used for military bases. Only set in the full GeoIP2 database.
+        mapCountry(response.country, response.registeredCountry, response.continent.code)
+
+    protected fun mapCountry(country: com.maxmind.geoip2.record.Country, registeredCountry: com.maxmind.geoip2.record.Country, continentCode: String?) =
+        if (country.isoCode != null) { // country is not always set. Preferably use country, but if it's not set ...
+            mapCountry(country, continentCode)
+        } else { // ... then use registeredCountry (the country where the IP is registered)
+            mapCountry(registeredCountry, continentCode)
+        }
+
+    protected fun mapCountry(country: com.maxmind.geoip2.record.Country, continentCode: String?) = GeoLite2Country(
+        countryIsoCode = country.isoCode,
+        countryName = country.name,
+        continent = continentCode?.let { Continent.byCode(continentCode) },
+        geoNameId = country.geoNameId,
+        isInEuropeanUnion = country.isInEuropeanUnion,
+        names = country.names,
     )
 
     protected fun map(response: CityResponse) = GeoLite2CityResponse(
@@ -61,13 +75,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         subDivision = response.mostSpecificSubdivision?.name,
         location = response.location?.let { map(it) },
         geoNameId = response.city.geoNameId,
-        country = Country(
-            countryIsoCode = response.registeredCountry.isoCode,
-            countryName = response.registeredCountry.name,
-            geoNameId = response.registeredCountry.geoNameId,
-            isInEuropeanUnion = response.registeredCountry.isInEuropeanUnion,
-            names = response.registeredCountry.names,
-        ),
+        country = mapCountry(response.country, response.registeredCountry, response.continent.code),
         names = response.city.names,
     )
 

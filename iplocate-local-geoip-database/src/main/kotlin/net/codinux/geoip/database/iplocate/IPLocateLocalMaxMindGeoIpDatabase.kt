@@ -1,8 +1,9 @@
 package net.codinux.geoip.database.iplocate
 
 import com.maxmind.db.Reader
+import net.codinux.geoip.database.Continent
+import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.iplocate.model.IPLocateAsnResponse
-import net.codinux.geoip.database.iplocate.model.IPLocateCountryResponse
 import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
@@ -20,12 +21,12 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    fun lookupCountry(ipString: String): IPLocateCountryResponse? =
+    fun lookupCountry(ipString: String): Country? =
         readRecord(ipString, countryReader) { countryRecordMap ->
-            IPLocateCountryResponse(
-                countryCode = countryRecordMap["country_code"]!!,
+            Country(
+                countryIsoCode = countryRecordMap["country_code"]!!,
                 countryName = countryRecordMap["country_name"]!!,
-                continentCode = countryRecordMap["continent_code"]!!,
+                continent = Continent.byCode(countryRecordMap["continent_code"]!!)!!,
             )
         }
 

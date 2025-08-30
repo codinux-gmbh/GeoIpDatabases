@@ -19,8 +19,8 @@ class IPLocateLocalMaxMindGeoIpDatabaseTest {
 
         assertThat(result).isNotNull()
         assertThat(result!!::countryName).isEqualTo("Australia")
-        assertThat(result::countryCode).isEqualTo("AU")
-        assertThat(result::continentCode).isEqualTo("OC")
+        assertThat(result::countryIsoCode).isEqualTo("AU")
+        assertThat(result::continent).isEqualTo(Continent.Oceania)
     }
 
     @Test

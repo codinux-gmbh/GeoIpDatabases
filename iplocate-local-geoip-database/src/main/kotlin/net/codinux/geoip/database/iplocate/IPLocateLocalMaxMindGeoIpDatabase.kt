@@ -4,6 +4,7 @@ import com.maxmind.db.Reader
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
+import net.codinux.geoip.database.DomainNameLookup
 import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
@@ -11,6 +12,7 @@ import java.nio.file.Path
 open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
     protected val asnDatabaseFile: Path? = null,
+    protected val domainNameLookup: DomainNameLookup = DomainNameLookup.Default,
 ) {
 
     // we cannot use DatabaseReader as this one checks if it's a .mmdb file from MaxMind
@@ -37,7 +39,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
                 name = asnRecordMap["name"]!!,
                 organization = asnRecordMap["org"]?.takeUnless { it.isBlank() },
-                domain = asnRecordMap["domain"]?.takeUnless { it.isBlank() },
+                domain = asnRecordMap["domain"]?.takeUnless { it.isBlank() } ?: domainNameLookup.lookupDomain(ipString),
                 countryCode = asnRecordMap["country_code"]!!,
             )
         }

@@ -7,6 +7,7 @@ import com.maxmind.geoip2.model.CountryResponse
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
+import net.codinux.geoip.database.DomainNameLookup
 import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
 import net.codinux.geoip.database.Location
@@ -19,6 +20,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
     protected val asnDatabaseFile: Path? = null,
     protected val cityDatabaseFile: Path? = null,
+    protected val domainNameLookup: DomainNameLookup = DomainNameLookup.Default,
 ) {
 
     protected val countryReader by lazy { countryDatabaseFile?.let { DatabaseReader.Builder(it.toFile()).build() } }
@@ -48,7 +50,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         val inetAddress = InetAddress.getByName(ipString)
 
         asnReader.tryAsn(inetAddress)
-            .map { mapAutonomousSystem(it) }.orElse(null)
+            .map { mapAutonomousSystem(inetAddress, it) }.orElse(null)
     }
 
 
@@ -102,9 +104,10 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         }
 
 
-    protected open fun mapAutonomousSystem(response: AsnResponse) = AutonomousSystem(
+    protected open fun mapAutonomousSystem(inetAddress: InetAddress, response: AsnResponse) = AutonomousSystem(
         autonomousSystemNumber = response.autonomousSystemNumber,
-        name = response.autonomousSystemOrganization
+        name = response.autonomousSystemOrganization,
+        domain = domainNameLookup.lookupDomain(inetAddress),
     )
 
 

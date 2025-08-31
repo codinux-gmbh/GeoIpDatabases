@@ -11,6 +11,7 @@ import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
 import net.codinux.geoip.database.Location
 import net.codinux.geoip.database.Subdivision
+import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
 
@@ -26,22 +27,24 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
 
     protected val asnReader by lazy { asnDatabaseFile?.let { DatabaseReader.Builder(it.toFile()).build() } }
 
+    protected val log by logger()
 
-    open fun lookupCountry(ipString: String): GeoLite2Country? = countryReader?.let { countryReader ->
+
+    open fun lookupCountry(ipString: String): GeoLite2Country? = nonNullReader(countryReader, "Country") { countryReader ->
         val inetAddress = InetAddress.getByName(ipString)
 
         countryReader.tryCountry(inetAddress)
             .map { mapCountry(it) }.orElse(null)
     }
 
-    open fun lookupCity(ipString: String): City? = cityReader?.let { cityReader ->
+    open fun lookupCity(ipString: String): City? = nonNullReader(cityReader, "City") { cityReader ->
         val inetAddress = InetAddress.getByName(ipString)
 
         cityReader.tryCity(inetAddress)
             .map { mapCity(it) }.orElse(null)
     }
 
-    open fun lookupAsn(ipString: String): AutonomousSystem? = asnReader?.let { asnReader ->
+    open fun lookupAsn(ipString: String): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
         val inetAddress = InetAddress.getByName(ipString)
 
         asnReader.tryAsn(inetAddress)
@@ -103,5 +106,15 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         autonomousSystemNumber = response.autonomousSystemNumber,
         name = response.autonomousSystemOrganization
     )
+
+
+    protected inline fun <T> nonNullReader(reader: DatabaseReader?, type: String, block: (DatabaseReader) -> T): T? =
+        if (reader != null) {
+            block(reader)
+        } else {
+            log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
+                    "Please pass the path to MaxMind GeoLite2 $type database file to constructor." }
+            null
+        }
 
 }

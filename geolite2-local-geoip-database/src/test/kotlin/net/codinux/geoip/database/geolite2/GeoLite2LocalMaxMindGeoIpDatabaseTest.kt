@@ -10,9 +10,9 @@ import kotlin.test.Test
 class GeoLite2LocalMaxMindGeoIpDatabaseTest {
 
     private val underTest = GeoLite2LocalMaxMindGeoIpDatabase(
-        getResourcePath("databases/GeoLite2-Country.mmdb"),
-        getResourcePath("databases/GeoLite2-ASN.mmdb"),
-        getResourcePath("databases/GeoLite2-City.mmdb"),
+        countryDatabaseFile = getResourcePath("databases/GeoLite2-Country.mmdb"),
+        asnDatabaseFile = getResourcePath("databases/GeoLite2-ASN.mmdb"),
+        cityDatabaseFile = getResourcePath("databases/GeoLite2-City.mmdb"),
     )
 
 

@@ -21,7 +21,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    fun lookupCountry(ipString: String): Country? = countryReader?.let { countryReader ->
+    fun lookupCountry(ipString: String): Country? = nonNullReader(countryReader, "Country") { countryReader ->
         readRecord(ipString, countryReader) { countryRecordMap ->
             Country(
                 countryIsoCode = countryRecordMap["country_code"]!!,
@@ -31,7 +31,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
         }
     }
 
-    fun lookupAsn(ipString: String): AutonomousSystem? = asnReader?.let { asnReader ->
+    fun lookupAsn(ipString: String): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
         readRecord(ipString, asnReader) { asnRecordMap ->
             AutonomousSystem(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
@@ -57,5 +57,15 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
         log.error(e) { "Could not retrieve record from IPLocate.io database from IP $ipString" }
         null
     }
+
+
+    protected inline fun <T> nonNullReader(reader: Reader?, type: String, block: (Reader) -> T): T? =
+        if (reader != null) {
+            block(reader)
+        } else {
+            log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
+                    "Please pass the path to IPLocate.io $type database file to constructor." }
+            null
+        }
 
 }

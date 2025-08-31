@@ -10,7 +10,10 @@ import kotlin.test.Test
 
 class IPLocateLocalMaxMindGeoIpDatabaseTest {
 
-    private val underTest = IPLocateLocalMaxMindGeoIpDatabase(getResourcePath("databases/ip-to-country.mmdb"), getResourcePath("databases/ip-to-asn.mmdb"))
+    private val underTest = IPLocateLocalMaxMindGeoIpDatabase(
+        countryDatabaseFile = getResourcePath("databases/ip-to-country.mmdb"),
+        asnDatabaseFile = getResourcePath("databases/ip-to-asn.mmdb")
+    )
 
 
     @Test

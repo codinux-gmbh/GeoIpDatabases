@@ -36,8 +36,8 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
             AutonomousSystem(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
                 name = asnRecordMap["name"]!!,
-                organization = asnRecordMap["org"]!!,
-                domain = asnRecordMap["domain"]!!,
+                organization = asnRecordMap["org"]?.takeUnless { it.isBlank() },
+                domain = asnRecordMap["domain"]?.takeUnless { it.isBlank() },
                 countryCode = asnRecordMap["country_code"]!!,
             )
         }

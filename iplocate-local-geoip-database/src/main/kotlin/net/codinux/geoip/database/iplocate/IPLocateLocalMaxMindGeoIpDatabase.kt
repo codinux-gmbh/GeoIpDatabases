@@ -9,19 +9,19 @@ import java.net.InetAddress
 import java.nio.file.Path
 
 open class IPLocateLocalMaxMindGeoIpDatabase(
-    protected val countryDatabaseFile: Path,
-    protected val asnDatabaseFile: Path,
+    protected val countryDatabaseFile: Path? = null,
+    protected val asnDatabaseFile: Path? = null,
 ) {
 
     // we cannot use DatabaseReader as this one checks if it's a .mmdb file from MaxMind
-    protected val countryReader by lazy { Reader(countryDatabaseFile.toFile()) }
+    protected val countryReader by lazy { countryDatabaseFile?.let { Reader(it.toFile()) } }
 
-    protected val asnReader by lazy { Reader(asnDatabaseFile.toFile()) }
+    protected val asnReader by lazy { asnDatabaseFile?.let { Reader(it.toFile()) } }
 
     protected val log by logger()
 
 
-    fun lookupCountry(ipString: String): Country? =
+    fun lookupCountry(ipString: String): Country? = countryReader?.let { countryReader ->
         readRecord(ipString, countryReader) { countryRecordMap ->
             Country(
                 countryIsoCode = countryRecordMap["country_code"]!!,
@@ -29,8 +29,9 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
                 continent = Continent.byCode(countryRecordMap["continent_code"]!!)!!,
             )
         }
+    }
 
-    fun lookupAsn(ipString: String): AutonomousSystem? =
+    fun lookupAsn(ipString: String): AutonomousSystem? = asnReader?.let { asnReader ->
         readRecord(ipString, asnReader) { asnRecordMap ->
             AutonomousSystem(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
@@ -40,6 +41,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
                 countryCode = asnRecordMap["country_code"]!!,
             )
         }
+    }
 
 
     protected open fun <T> readRecord(ipString: String, reader: Reader, mapper: (Map<String, String>) -> T): T? = try {

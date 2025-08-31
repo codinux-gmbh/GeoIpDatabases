@@ -15,36 +15,36 @@ import java.net.InetAddress
 import java.nio.file.Path
 
 open class GeoLite2LocalMaxMindGeoIpDatabase(
-    protected val countryDatabaseFile: Path,
-    protected val asnDatabaseFile: Path,
-    protected val cityDatabaseFile: Path,
+    protected val countryDatabaseFile: Path? = null,
+    protected val asnDatabaseFile: Path? = null,
+    protected val cityDatabaseFile: Path? = null,
 ) {
 
-    protected val countryReader by lazy { DatabaseReader.Builder(countryDatabaseFile.toFile()).build() }
+    protected val countryReader by lazy { countryDatabaseFile?.let { DatabaseReader.Builder(it.toFile()).build() } }
 
-    protected val cityReader by lazy { DatabaseReader.Builder(cityDatabaseFile.toFile()).build() }
+    protected val cityReader by lazy { cityDatabaseFile?.let { DatabaseReader.Builder(it.toFile()).build() } }
 
-    protected val asnReader by lazy { DatabaseReader.Builder(asnDatabaseFile.toFile()).build() }
+    protected val asnReader by lazy { asnDatabaseFile?.let { DatabaseReader.Builder(it.toFile()).build() } }
 
 
-    open fun lookupCountry(ipString: String): GeoLite2Country? {
+    open fun lookupCountry(ipString: String): GeoLite2Country? = countryReader?.let { countryReader ->
         val inetAddress = InetAddress.getByName(ipString)
 
-        return countryReader.tryCountry(inetAddress)
+        countryReader.tryCountry(inetAddress)
             .map { mapCountry(it) }.orElse(null)
     }
 
-    open fun lookupCity(ipString: String): City? {
+    open fun lookupCity(ipString: String): City? = cityReader?.let { cityReader ->
         val inetAddress = InetAddress.getByName(ipString)
 
-        return cityReader.tryCity(inetAddress)
+        cityReader.tryCity(inetAddress)
             .map { mapCity(it) }.orElse(null)
     }
 
-    open fun lookupAsn(ipString: String): AutonomousSystem? {
+    open fun lookupAsn(ipString: String): AutonomousSystem? = asnReader?.let { asnReader ->
         val inetAddress = InetAddress.getByName(ipString)
 
-        return asnReader.tryAsn(inetAddress)
+        asnReader.tryAsn(inetAddress)
             .map { mapAutonomousSystem(it) }.orElse(null)
     }
 

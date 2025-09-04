@@ -15,12 +15,12 @@ import java.util.*
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeBytes
 
-abstract class DownloaderBase(
+open class Downloader(
+    protected val webClient: WebClient,
     /**
      * Only used for logging
      */
-    protected val databaseProvider: String,
-    protected val webClient: WebClient,
+    protected val databaseProvider: String = "",
     protected val extractor: FileExtractor = FileExtractor.Default,
 ) {
 

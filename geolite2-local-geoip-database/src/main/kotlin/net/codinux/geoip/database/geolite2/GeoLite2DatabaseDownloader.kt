@@ -2,7 +2,7 @@ package net.codinux.geoip.database.geolite2
 
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseType
-import net.codinux.geoip.database.download.DownloaderBase
+import net.codinux.geoip.database.download.Downloader
 import net.dankito.web.client.KtorWebClient
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.auth.BasicAuthAuthentication
@@ -14,7 +14,7 @@ open class GeoLite2DatabaseDownloader(
     accountId: String,
     licenseKey: String,
     webClient: WebClient = KtorWebClient(authentication = BasicAuthAuthentication(accountId, licenseKey))
-) : DownloaderBase("GeoLite2", webClient) {
+) : Downloader(webClient, "GeoLite2") {
 
     companion object {
         const val AsnGeoIpDbPermalink = "https://download.maxmind.com/geoip/databases/GeoLite2-ASN/download?suffix=tar.gz"

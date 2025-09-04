@@ -1,13 +1,13 @@
 package net.codinux.geoip.database.iplocate
 
-import net.codinux.geoip.database.download.DownloaderBase
+import net.codinux.geoip.database.download.Downloader
 import net.dankito.web.client.JavaHttpClientWebClient
 import net.dankito.web.client.WebClient
 import java.nio.file.Path
 
 open class IPLocateDatabaseDownloader(
     webClient: WebClient = JavaHttpClientWebClient()
-) : DownloaderBase("IPLocate.io", webClient) {
+) : Downloader(webClient, "IPLocate.io") {
 
     companion object {
         const val CountryCsvDownloadUrl = "https://github.com/iplocate/ip-address-databases/raw/refs/heads/main/ip-to-country/ip-to-country.csv.zip?download=true"

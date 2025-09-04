@@ -11,8 +11,6 @@ data class Location(
      * coordinates.
      */
     val accuracyRadiusKilometers: Int,
-
-    val timeZone: String? = null,
 ) {
     override fun toString() = "($latitude, $longitude)"
 }

@@ -2,6 +2,7 @@ package net.codinux.geoip.service
 
 import io.vertx.core.http.HttpServerRequest
 import jakarta.inject.Singleton
+import jakarta.ws.rs.core.Response
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
@@ -26,9 +27,12 @@ class GeoIpService(
             ?: geoLite2Database.lookupAsn(ipAddress)
 
 
-    fun getCallerIp(request: HttpServerRequest): String =
+    fun <T> withCallerIp(request: HttpServerRequest, action: (callerIp: String) -> T) =
+        getCallerIp(request)?.let { action(it) }
+            ?: Response.serverError().entity("Cannot determine your IP address")
+
+    fun getCallerIp(request: HttpServerRequest): String? =
         request.headers().get("X-Forwarded-For") // if running behind a reverse proxy like a Nginx ingress
             ?: request.remoteAddress()?.hostAddress()
-            ?: request.host()
 
 }

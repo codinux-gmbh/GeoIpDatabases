@@ -21,7 +21,9 @@ class GeoIpResource(
     @GET
     @Path("/country/me")
     fun lookupCountry(@Context request: HttpServerRequest) =
-        service.lookupCountry(service.getCallerIp(request))
+        service.withCallerIp(request) {
+            service.lookupCountry(it)
+        }
 
     @GET
     @Path("/country/{ipAddress}")

@@ -4,7 +4,9 @@ import kotlinx.coroutines.runBlocking
 import net.codinux.log.logger
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.get
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.InputStream
 import java.net.URI
 import java.nio.file.Path
 import java.time.Instant
@@ -12,10 +14,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
-import kotlin.io.path.Path
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectories
-import kotlin.io.path.deleteExisting
 import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
 import kotlin.io.path.writeBytes
@@ -75,26 +74,29 @@ abstract class DownloaderBase(
     protected open fun getFilename(url: String): String = File(URI(url).path).name
 
 
-    protected open fun downloadAndUnzip(downloadUrl: String, unzipTo: Path, fileEndingInZipFile: String, deleteDownloadedZipFile: Boolean = true): Boolean = try {
-        val downloadTo = Path(unzipTo.absolutePathString() + ".zip")
-        if (downloadTo(downloadUrl, downloadTo)) {
-            val result = unzip(downloadTo, unzipTo, fileEndingInZipFile)
+    protected open fun downloadAndUnzip(downloadUrl: String, unzipTo: Path, fileEndingInZipFile: String, saveDownloadedZipFile: Boolean = false) = runBlocking {
+        downloadAndUnzipAsync(downloadUrl, unzipTo, fileEndingInZipFile, saveDownloadedZipFile)
+    }
 
-            if (deleteDownloadedZipFile) {
-                downloadTo.deleteExisting()
+    protected open suspend fun downloadAndUnzipAsync(downloadUrl: String, unzipTo: Path, fileEndingInZipFile: String, saveDownloadedZipFile: Boolean = false): Boolean = try {
+        downloadAsync(downloadUrl).downloadedFile?.let { downloadedFile ->
+            if (saveDownloadedZipFile) {
+                unzipTo.parent.createDirectories()
+                unzipTo.parent.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
             }
 
-            result
-        } else {
-            false
-        }
+            unzip(ByteArrayInputStream(downloadedFile.bytes), unzipTo, fileEndingInZipFile)
+        } ?: false
     } catch (e: Throwable) {
         log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }
         false
     }
 
-    protected open fun unzip(zipFile: Path, targetFile: Path, fileEnding: String): Boolean =
-        ZipInputStream(zipFile.inputStream()).use { zipInputStream ->
+    protected open fun unzip(zipFile: Path, targetFile: Path, fileEnding: String) =
+        unzip(zipFile.inputStream(), targetFile, fileEnding)
+
+    protected open fun unzip(zipFile: InputStream, targetFile: Path, fileEnding: String): Boolean =
+        ZipInputStream(zipFile).use { zipInputStream ->
             // this implementation assumes there's only one fle / ZipEntry in .zip file, so we don't do a while (entry != null) { }
             var entry: ZipEntry? = zipInputStream.nextEntry
             while (entry != null) {

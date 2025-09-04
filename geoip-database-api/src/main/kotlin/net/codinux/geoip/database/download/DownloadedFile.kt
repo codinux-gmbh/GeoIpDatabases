@@ -7,6 +7,7 @@ data class DownloadedFile(
     val bytes: ByteArray,
     val filename: String,
     val contentType: String,
+    val contentLength: Long? = null,
     val lastModified: Instant? = null,
     val eTag: String? = null,
 )

@@ -15,9 +15,9 @@ open class GeoLite2City(
     timeZone: String? = null,
     postalCode: String? = null,
 
-    leastSpecificSubdivision: Subdivision? = null,
-    mostSpecificSubdivision: Subdivision? = null,
+    firstLevelSubdivision: Subdivision? = null,
+    secondLevelSubdivision: Subdivision? = null,
 
     @JsonIgnore // we do not want to have names in API JSON response
     val names: Map<String, String> = emptyMap(),
-) : City(name, country, geoNameId, location, timeZone, postalCode, leastSpecificSubdivision, mostSpecificSubdivision)
+) : City(name, country, geoNameId, location, timeZone, postalCode, firstLevelSubdivision, secondLevelSubdivision)

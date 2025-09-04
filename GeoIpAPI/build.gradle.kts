@@ -16,16 +16,29 @@ kotlin {
 
 val quarkusVersion: String by project
 
+val klfVersion: String by project
+val logFormatterVersion: String by project
+val lokiLoggerVersion: String by project
+
 dependencies {
     implementation(enforcedPlatform("io.quarkus.platform:quarkus-bom:$quarkusVersion"))
     implementation("io.quarkus:quarkus-kotlin")
 
+    implementation(project(":geolite2-local-geoip-database"))
+    implementation(project(":iplocate-local-geoip-database"))
+
     implementation("io.quarkus:quarkus-rest")
     implementation("io.quarkus:quarkus-rest-jackson")
+    implementation("io.quarkus:quarkus-hibernate-validator")
 
     implementation("io.quarkus:quarkus-smallrye-health")
     implementation("io.quarkus:quarkus-micrometer-registry-prometheus")
     implementation("io.quarkus:quarkus-smallrye-openapi")
+
+    implementation("net.codinux.log:klf-graal:$klfVersion")
+    implementation("net.codinux.log:quarkus-log-formatter:$logFormatterVersion")
+    implementation("net.codinux.log:quarkus-loki-log-appender:$lokiLoggerVersion")
+    implementation("net.codinux.log.kubernetes:codinux-kubernetes-info-retriever:$lokiLoggerVersion")
 
 
     testImplementation("io.quarkus:quarkus-junit5")

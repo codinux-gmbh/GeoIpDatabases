@@ -89,15 +89,21 @@ open class Downloader(
         downloadAndExtractAsync(downloadUrl, extractTo, fileEndingInZipFile, saveDownloadedZipFile)
     }
 
-    protected open suspend fun downloadAndExtractAsync(downloadUrl: String, extractTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false): Boolean = try {
-        downloadAsync(downloadUrl).downloadedFile?.let { downloadedFile ->
+    protected open suspend fun downloadAndExtractAsync(downloadUrl: String, extractTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false): DownloadAndExtractFilesResult = try {
+        val downloadResult = downloadAsync(downloadUrl)
+        if (downloadResult.downloadedFile == null) {
+            DownloadAndExtractFilesResult.error(downloadResult.error)
+        } else {
+            val downloadedFile = downloadResult.downloadedFile
             saveToFile(saveDownloadedZipFile, extractTo.parent.resolve(downloadedFile.filename), downloadedFile.bytes)
 
-            extractFile(downloadedFile, extractTo, fileEndingInZipFile)
-        } ?: false
+            val successfullyExtracted = extractFile(downloadedFile, extractTo, fileEndingInZipFile)
+
+            DownloadAndExtractFilesResult.downloadSuccess(successfullyExtracted, downloadedFile, extractTo)
+        }
     } catch (e: Throwable) {
         log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }
-        false
+        DownloadAndExtractFilesResult.error(e)
     }
 
     protected open fun extractFile(downloadedFile: DownloadedFile, extractTo: Path, fileEndingInZipFile: String?): Boolean =
@@ -111,15 +117,22 @@ open class Downloader(
             extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), extractTo, fileEndingInZipFile ?: "")
         }
 
-    protected open suspend fun downloadAndExtractFilesAsync(downloadUrl: String, extractToFolder: Path, filesMatching: Set<String>, saveDownloadedZipFile: Boolean = false): Boolean = try {
-        downloadAsync(downloadUrl).downloadedFile?.let { downloadedFile ->
+    protected open suspend fun downloadAndExtractFilesAsync(downloadUrl: String, extractToFolder: Path, filesMatching: Set<String>, saveDownloadedZipFile: Boolean = false): DownloadAndExtractFilesResult = try {
+        val downloadResult = downloadAsync(downloadUrl)
+        if (downloadResult.downloadedFile == null) {
+            DownloadAndExtractFilesResult.error(downloadResult.error)
+        } else {
+            val downloadedFile = downloadResult.downloadedFile
+
             saveToFile(saveDownloadedZipFile, extractToFolder.resolve(downloadedFile.filename), downloadedFile.bytes)
 
-            extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), extractToFolder, filesMatching)
-        } ?: false
+            val (successfullyExtracted, extractedTo, errors) = extractor.unzipMultipleFiles(ByteArrayInputStream(downloadedFile.bytes), extractToFolder, filesMatching)
+
+            DownloadAndExtractFilesResult.downloadSuccess(successfullyExtracted, downloadedFile, extractedTo, errors)
+        }
     } catch (e: Throwable) {
         log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }
-        false
+        DownloadAndExtractFilesResult.error(e)
     }
 
 

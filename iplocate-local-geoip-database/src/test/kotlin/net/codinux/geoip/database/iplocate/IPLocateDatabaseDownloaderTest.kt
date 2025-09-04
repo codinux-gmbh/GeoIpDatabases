@@ -5,6 +5,7 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
+import net.codinux.geoip.database.download.DownloadAndExtractFilesResult
 import net.codinux.geoip.database.download.DownloadAndSaveFileResult
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -57,6 +58,15 @@ class IPLocateDatabaseDownloaderTest {
 
 
     private fun assertDatabase(result: DownloadAndSaveFileResult, destination: Path, expectedMinFileSize: Long) {
+        assertThat(result::successfullyDownloaded).isTrue()
+
+        assertDatabase(result.successful, destination, expectedMinFileSize)
+
+        assertThat(result::downloadedFile).isNotNull()
+        assertThat(result.downloadedFile!!.bytes.size.toLong()).isGreaterThanOrEqualTo(expectedMinFileSize)
+    }
+
+    private fun assertDatabase(result: DownloadAndExtractFilesResult, destination: Path, expectedMinFileSize: Long) {
         assertThat(result::successfullyDownloaded).isTrue()
 
         assertDatabase(result.successful, destination, expectedMinFileSize)

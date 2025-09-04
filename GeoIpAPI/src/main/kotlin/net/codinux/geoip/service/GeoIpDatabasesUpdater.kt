@@ -17,6 +17,7 @@ import net.codinux.geoip.config.IPLocateConfig
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
+import net.codinux.geoip.database.download.DownloadAndExtractFilesResult
 import net.codinux.geoip.database.download.DownloadAndSaveFileResult
 import net.codinux.geoip.database.geolite2.GeoLite2DatabaseDownloader
 import net.codinux.geoip.database.iplocate.IPLocateDatabaseDownloader
@@ -115,7 +116,7 @@ class GeoIpDatabasesUpdater(
 
     private suspend fun updateGeoLite2Databases(accountId: String, licenseKey: String, asnPath: Path?, countryPath: Path?, cityPath: Path?) = withContext(Dispatchers.IO) {
         val downloader = GeoLite2DatabaseDownloader(accountId, licenseKey)
-        val jobs = mutableListOf<Deferred<Boolean>>()
+        val jobs = mutableListOf<Deferred<DownloadAndExtractFilesResult>>()
 
         if (asnPath != null) {
             jobs.add(downloadGeoLite2Database(downloader, asnPath, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP))
@@ -135,14 +136,15 @@ class GeoIpDatabasesUpdater(
     }
 
     private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, path: Path, type: DatabaseType, format: DatabaseFormat) = async {
-        val success = downloader.downloadTo(path, type, format)
+        val result = downloader.downloadTo(path, type, format)
+        val success = result.successful
         if (success) {
             log.info { "Downloaded GeoLite2 $type database to $path" }
         }
 
         updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.GeoLite2, type, format, success))
 
-        success
+        result
     }
 
 }

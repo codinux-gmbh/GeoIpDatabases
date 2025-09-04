@@ -2,6 +2,7 @@ package net.codinux.geoip.database.geolite2
 
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseType
+import net.codinux.geoip.database.download.DownloadAndExtractFilesResult
 import net.codinux.geoip.database.download.Downloader
 import net.dankito.web.client.ClientConfig
 import net.dankito.web.client.JavaHttpClientWebClient
@@ -31,13 +32,13 @@ open class GeoLite2DatabaseDownloader(
 
     suspend fun downloadIfNewer(lastModifiedTime: Instant, downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean =
         if (isDatabaseNewerThan(lastModifiedTime, type, format) == true) {
-            downloadTo(downloadTo, type, format)
+            downloadTo(downloadTo, type, format).successful
         } else {
             false
         }
 
 
-    suspend fun downloadTo(downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean {
+    suspend fun downloadTo(downloadTo: Path, type: DatabaseType, format: DatabaseFormat): DownloadAndExtractFilesResult {
         val url = getPermalink(type, format)
 
         return if (format == DatabaseFormat.MaxMindGeoIP) {

@@ -1,5 +1,6 @@
 package net.codinux.geoip.database.compression
 
+import net.codinux.log.logger
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
@@ -21,33 +22,44 @@ open class FileExtractor {
         val Default: FileExtractor = FileExtractor()
     }
 
+    protected val log by logger()
+
 
     open fun unzip(zipFile: Path, targetFile: Path, fileEnding: String) =
         unzip(zipFile.inputStream(), targetFile, fileEnding)
 
     open fun unzip(zipFile: InputStream, targetFile: Path, fileEnding: String): Boolean =
-        unzip(zipFile, targetFile, setOf(fileEnding))
+        unzipMultipleFiles(zipFile, targetFile, setOf(fileEnding)).first
 
-    open fun unzip(zipFile: InputStream, targetFile: Path, filesMatching: Set<String>): Boolean =
+    open fun unzipMultipleFiles(zipFile: InputStream, targetFile: Path, filesMatching: Set<String>): Triple<Boolean, List<Path>, List<Throwable>> =
         ZipInputStream(zipFile).use { zipInputStream ->
+            val extractedFiles = mutableListOf<Path>()
             val unmatchedFiles = filesMatching.toMutableSet()
+            val errors = mutableListOf<Throwable>()
 
             var entry: ZipEntry? = zipInputStream.nextEntry
             while (entry != null) {
-                val match = filesMatching.firstOrNull { entry.name.endsWith(it, true) }
+                val entryName = entry.name
+                val match = filesMatching.firstOrNull { entryName.endsWith(it, true) }
                 if (match != null) {
-                    unmatchedFiles.remove(match)
+                    val unzipTo = if (targetFile.isDirectory()) targetFile.resolve(Path(entryName).name) else targetFile
+                    try {
+                        extractFile(zipInputStream, unzipTo)
 
-                    val unzipTo = if (targetFile.isDirectory()) targetFile.resolve(Path(entry.name).name) else targetFile
-                    extractFile(zipInputStream, unzipTo)
+                        extractedFiles.add(unzipTo)
+                        unmatchedFiles.remove(match)
 
-                    zipInputStream.closeEntry()
+                        zipInputStream.closeEntry()
+                    } catch (e: Throwable) {
+                        errors.add(e)
+                        log.error(e) { "Could not extract $entryName to $unzipTo"}
+                    }
                 }
 
                 entry = zipInputStream.nextEntry
             }
 
-            unmatchedFiles.isEmpty()
+            Triple(unmatchedFiles.isEmpty() && errors.isEmpty(), extractedFiles, errors)
         }
 
     fun gunzip(gzipFile: InputStream, targetFile: Path): Boolean =

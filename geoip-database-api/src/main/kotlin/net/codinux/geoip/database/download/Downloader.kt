@@ -39,10 +39,7 @@ open class Downloader(
 
     protected open suspend fun downloadToAsync(downloadUrl: String, downloadTo: Path): Boolean = try {
         val downloadResult = downloadAsync(downloadUrl)
-        if (downloadResult.successful) {
-            downloadTo.parent.createDirectories()
-            downloadTo.writeBytes(downloadResult.downloadedFile!!.bytes)
-        }
+        saveToFile(downloadResult.successful, downloadTo, downloadResult.downloadedFile!!.bytes)
 
         downloadResult.successful
     } catch (e: Throwable) {
@@ -86,10 +83,7 @@ open class Downloader(
 
     protected open suspend fun downloadAndExtractAsync(downloadUrl: String, extractTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false): Boolean = try {
         downloadAsync(downloadUrl).downloadedFile?.let { downloadedFile ->
-            if (saveDownloadedZipFile) {
-                extractTo.parent.createDirectories()
-                extractTo.parent.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
-            }
+            saveToFile(saveDownloadedZipFile, extractTo.parent.resolve(downloadedFile.filename), downloadedFile.bytes)
 
             extractFile(downloadedFile, extractTo, fileEndingInZipFile)
         } ?: false
@@ -111,10 +105,7 @@ open class Downloader(
 
     protected open suspend fun downloadAndExtractFilesAsync(downloadUrl: String, extractToFolder: Path, filesMatching: Set<String>, saveDownloadedZipFile: Boolean = false): Boolean = try {
         downloadAsync(downloadUrl).downloadedFile?.let { downloadedFile ->
-            if (saveDownloadedZipFile) {
-                extractToFolder.createDirectories()
-                extractToFolder.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
-            }
+            saveToFile(saveDownloadedZipFile, extractToFolder.resolve(downloadedFile.filename), downloadedFile.bytes)
 
             extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), extractToFolder, filesMatching)
         } ?: false
@@ -123,6 +114,13 @@ open class Downloader(
         false
     }
 
+
+    protected open fun saveToFile(shouldSave: Boolean, downloadTo: Path, fileContent: ByteArray) {
+        if (shouldSave) {
+            downloadTo.parent.createDirectories()
+            downloadTo.writeBytes(fileContent)
+        }
+    }
 
     protected open fun parseRfc1123DateTime(dateTime: String): Instant? = try {
         Instant.from(Rfc1123DateTimeFormat.parse(dateTime))

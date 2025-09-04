@@ -7,14 +7,15 @@ import kotlinx.coroutines.test.runTest
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.geolite2.test.TestCredentials
-import net.dankito.datetime.LocalDateTime
+import net.dankito.datetime.LocalDate
 import net.dankito.datetime.toJavaInstant
 import kotlin.test.Test
 
 class GeoLite2DatabaseDownloaderTest {
 
     companion object {
-        private val MinBuildTime = LocalDateTime(2025, 9, 1).toInstantAtUtc().toJavaInstant()
+        // the least frequently updated files get updated Tuesday and Friday -> database files get updated at least all 4 days
+        private val MinBuildTime = LocalDate.today().atStartOfDay().toInstantAtUtc().minusDays(4).toJavaInstant()
     }
 
 

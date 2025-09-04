@@ -8,8 +8,11 @@ import java.nio.file.Path
 import java.util.zip.GZIPInputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
+import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.inputStream
+import kotlin.io.path.isDirectory
+import kotlin.io.path.name
 import kotlin.io.path.outputStream
 
 open class FileExtractor {
@@ -23,22 +26,28 @@ open class FileExtractor {
         unzip(zipFile.inputStream(), targetFile, fileEnding)
 
     open fun unzip(zipFile: InputStream, targetFile: Path, fileEnding: String): Boolean =
+        unzip(zipFile, targetFile, setOf(fileEnding))
+
+    open fun unzip(zipFile: InputStream, targetFile: Path, filesMatching: Set<String>): Boolean =
         ZipInputStream(zipFile).use { zipInputStream ->
-            // this implementation assumes there's only one fle / ZipEntry in .zip file, so we don't do a while (entry != null) { }
+            val unmatchedFiles = filesMatching.toMutableSet()
+
             var entry: ZipEntry? = zipInputStream.nextEntry
             while (entry != null) {
-                if (entry.name.endsWith(fileEnding, true)) {
-                    extractFile(zipInputStream, targetFile)
+                val match = filesMatching.firstOrNull { entry.name.endsWith(it, true) }
+                if (match != null) {
+                    unmatchedFiles.remove(match)
+
+                    val unzipTo = if (targetFile.isDirectory()) targetFile.resolve(Path(entry.name).name) else targetFile
+                    extractFile(zipInputStream, unzipTo)
 
                     zipInputStream.closeEntry()
-
-                    return@use true
                 }
 
                 entry = zipInputStream.nextEntry
             }
 
-            false
+            unmatchedFiles.isEmpty()
         }
 
     fun gunzip(gzipFile: InputStream, targetFile: Path): Boolean =

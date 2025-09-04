@@ -42,7 +42,10 @@ open class GeoLite2DatabaseDownloader(
         return if (format == DatabaseFormat.MaxMindGeoIP) {
             downloadAndExtractAsync(url, downloadTo, ".mmdb")
         } else {
-            downloadToAsync(url, downloadTo)
+            downloadAndExtractFilesAsync(url, downloadTo, setOf(
+                "GeoLite2-$type-Blocks-IPv4.csv",
+                "GeoLite2-$type-Blocks-IPv6.csv",
+            ))
         }
     }
 

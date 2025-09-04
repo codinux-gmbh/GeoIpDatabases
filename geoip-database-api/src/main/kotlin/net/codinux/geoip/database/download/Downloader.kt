@@ -109,6 +109,20 @@ open class Downloader(
             extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), extractTo, fileEndingInZipFile ?: "")
         }
 
+    protected open suspend fun downloadAndExtractFilesAsync(downloadUrl: String, extractToFolder: Path, filesMatching: Set<String>, saveDownloadedZipFile: Boolean = false): Boolean = try {
+        downloadAsync(downloadUrl).downloadedFile?.let { downloadedFile ->
+            if (saveDownloadedZipFile) {
+                extractToFolder.createDirectories()
+                extractToFolder.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
+            }
+
+            extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), extractToFolder, filesMatching)
+        } ?: false
+    } catch (e: Throwable) {
+        log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }
+        false
+    }
+
 
     protected open fun parseRfc1123DateTime(dateTime: String): Instant? = try {
         Instant.from(Rfc1123DateTimeFormat.parse(dateTime))

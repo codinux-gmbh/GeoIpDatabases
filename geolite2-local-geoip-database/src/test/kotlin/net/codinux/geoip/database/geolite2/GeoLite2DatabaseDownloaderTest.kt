@@ -67,33 +67,59 @@ class GeoLite2DatabaseDownloaderTest {
 
     @Test
     fun download_AsnGeoIpDb() = runTest {
-        testDownloadFile(DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, 10_000_000)
+        testDownloadGeoIpDatabase(DatabaseType.ASN, 10_000_000)
     }
 
     @Test
     fun download_CountryGeoIpDb() = runTest {
-        testDownloadFile(DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, 9_600_000)
+        testDownloadGeoIpDatabase(DatabaseType.Country, 9_600_000)
     }
 
     @Test
     fun download_CityGeoIpDb() = runTest {
-        testDownloadFile(DatabaseType.City, DatabaseFormat.MaxMindGeoIP, 61_000_000)
+        testDownloadGeoIpDatabase(DatabaseType.City, 61_000_000)
     }
 
-    private suspend fun testDownloadFile(type: DatabaseType, format: DatabaseFormat, minExpectedSize: Long) {
-        val filename = getDownloadDestination(type, format)
+    private suspend fun testDownloadGeoIpDatabase(type: DatabaseType, minExpectedSize: Long) {
+        val filename = getDownloadFolder().resolve("GeoLite2-$type.mmdb")
 
-        val result = underTest.downloadIfNewer(MinBuildTime, filename, type, format)
+        val result = underTest.downloadIfNewer(MinBuildTime, filename, type, DatabaseFormat.MaxMindGeoIP)
 
         assertThat(result).isTrue()
         assertThat(filename.fileSize()).isGreaterThanOrEqualTo(minExpectedSize)
     }
 
-    private fun getDownloadDestination(type: DatabaseType, format: DatabaseFormat): Path {
+
+    @Test
+    fun download_AsnCsv() = runTest {
+        testDownloadCsvs(DatabaseType.ASN, 26_200_000, 14_400_000)
+    }
+
+    @Test
+    fun download_CountryCsv() = runTest {
+        testDownloadCsvs(DatabaseType.Country, 23_600_000, 27_700_000)
+    }
+
+    @Test
+    fun download_CityCsv() = runTest {
+        testDownloadCsvs(DatabaseType.City, 217_500_000, 124_500_000)
+    }
+
+    private suspend fun testDownloadCsvs(type: DatabaseType, ipv4MinExpectedSize: Long, ipv6MinExpectedSize: Long) {
+        val destination = getDownloadFolder()
+
+        val result = underTest.downloadIfNewer(MinBuildTime, destination, type, DatabaseFormat.CSV)
+
+        assertThat(result).isTrue()
+        assertThat(destination.resolve("GeoLite2-$type-Blocks-IPv4.csv").fileSize()).isGreaterThanOrEqualTo(ipv4MinExpectedSize)
+        assertThat(destination.resolve("GeoLite2-$type-Blocks-IPv6.csv").fileSize()).isGreaterThanOrEqualTo(ipv6MinExpectedSize)
+    }
+
+
+    private fun getDownloadFolder(): Path {
         val currentDir = Path("").absolute()
 
         return currentDir.resolve("src/main/resources/databases/")
-            .resolve("GeoLite2-$type${if (format == DatabaseFormat.CSV) "-CSV.csv" else ".mmdb"}")
     }
 
 }

@@ -9,8 +9,6 @@ import net.dankito.web.client.auth.BasicAuthAuthentication
 import net.dankito.web.client.head
 import java.nio.file.Path
 import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 open class GeoLite2DatabaseDownloader(
     accountId: String,
@@ -27,8 +25,6 @@ open class GeoLite2DatabaseDownloader(
 
         const val CityGeoIpDbPermalink = "https://download.maxmind.com/geoip/databases/GeoLite2-City/download?suffix=tar.gz"
         const val CityCsvPermalink = "https://download.maxmind.com/geoip/databases/GeoLite2-City-CSV/download?suffix=zip"
-
-        val Rfc1123DateTimeFormat = DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.US)
     }
 
 
@@ -43,7 +39,11 @@ open class GeoLite2DatabaseDownloader(
     suspend fun downloadTo(downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean {
         val url = getPermalink(type, format)
 
-        return downloadAsync(url, downloadTo)
+        return if (format == DatabaseFormat.MaxMindGeoIP) {
+            downloadAndUnzip(url, downloadTo, ".mmdb")
+        } else {
+            downloadToAsync(url, downloadTo)
+        }
     }
 
 
@@ -68,13 +68,6 @@ open class GeoLite2DatabaseDownloader(
         }
 
         return null
-    }
-
-    private fun parseRfc1123DateTime(dateTime: String): Instant? = try {
-        Instant.from(Rfc1123DateTimeFormat.parse(dateTime))
-    } catch (e: Throwable) {
-        log.error(e) { "Could not parse Last-Modified header '$dateTime' to Instant" }
-        null
     }
 
 

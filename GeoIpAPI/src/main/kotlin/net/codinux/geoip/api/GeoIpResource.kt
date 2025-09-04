@@ -20,7 +20,7 @@ class GeoIpResource(
 
     @GET
     @Path("/country/me")
-    fun lookupCountry(@Context request: HttpServerRequest) =
+    fun lookupCallersCountry(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
             service.lookupCountry(it)
         }
@@ -32,9 +32,24 @@ class GeoIpResource(
 
 
     @GET
+    @Path("/city/me")
+    fun lookupCallersCity(@Context request: HttpServerRequest) =
+        service.withCallerIp(request) {
+            service.lookupCity(it)
+        }
+
+    @GET
     @Path("/city/{ipAddress}")
     fun lookupCity(@PathParam("ipAddress") ipAddress: String) =
         service.lookupCity(ipAddress)
+
+
+    @GET
+    @Path("/asn/me")
+    fun lookupCallersAsn(@Context request: HttpServerRequest) =
+        service.withCallerIp(request) {
+            service.lookupAsn(it)
+        }
 
     @GET
     @Path("/asn/{ipAddress}")

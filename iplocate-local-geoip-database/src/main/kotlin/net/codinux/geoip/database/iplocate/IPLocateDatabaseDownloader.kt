@@ -1,7 +1,7 @@
 package net.codinux.geoip.database.iplocate
 
 import net.codinux.geoip.database.download.DownloaderBase
-import net.dankito.web.client.KtorWebClient
+import net.dankito.web.client.JavaHttpClientWebClient
 import net.dankito.web.client.WebClient
 import java.nio.file.Path
 import java.util.zip.ZipEntry
@@ -14,7 +14,7 @@ import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
 
 open class IPLocateDatabaseDownloader(
-    webClient: WebClient = KtorWebClient()
+    webClient: WebClient = JavaHttpClientWebClient()
 ) : DownloaderBase("IPLocate.io", webClient) {
 
     companion object {

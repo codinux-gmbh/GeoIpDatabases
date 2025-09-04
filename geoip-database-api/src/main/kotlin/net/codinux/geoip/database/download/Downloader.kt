@@ -91,20 +91,23 @@ open class Downloader(
                 decompressTo.parent.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
             }
 
-            if (downloadedFile.contentType.substringBefore(';').endsWith("/gzip", true)) {
-                if (downloadedFile.filename.endsWith(".tar.gz", true)) {
-                    extractor.extractTarGz(ByteArrayInputStream(downloadedFile.bytes), decompressTo, fileEndingInZipFile ?: "")
-                } else {
-                    extractor.gunzip(ByteArrayInputStream(downloadedFile.bytes), decompressTo)
-                }
-            } else {
-                extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), decompressTo, fileEndingInZipFile ?: "")
-            }
+            extractFile(downloadedFile, decompressTo, fileEndingInZipFile)
         } ?: false
     } catch (e: Throwable) {
         log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }
         false
     }
+
+    protected open fun extractFile(downloadedFile: DownloadedFile, decompressTo: Path, fileEndingInZipFile: String?): Boolean =
+        if (downloadedFile.contentType.substringBefore(';').endsWith("/gzip", true)) {
+            if (downloadedFile.filename.endsWith(".tar.gz", true)) {
+                extractor.extractTarGz(ByteArrayInputStream(downloadedFile.bytes), decompressTo, fileEndingInZipFile ?: "")
+            } else {
+                extractor.gunzip(ByteArrayInputStream(downloadedFile.bytes), decompressTo)
+            }
+        } else {
+            extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), decompressTo, fileEndingInZipFile ?: "")
+        }
 
 
     protected open fun parseRfc1123DateTime(dateTime: String): Instant? = try {

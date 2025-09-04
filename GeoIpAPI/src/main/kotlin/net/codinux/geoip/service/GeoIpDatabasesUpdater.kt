@@ -74,8 +74,7 @@ class GeoIpDatabasesUpdater(
     } }
 
     private suspend fun CoroutineScope.downloadIPLocateDatabase(downloader: IPLocateDatabaseDownloader, path: Path, type: DatabaseType) = async {
-        val success = if (type == DatabaseType.ASN) downloader.downloadIpToAsnMaxMindDatabase(path)
-                      else downloader.downloadIpToCountryMaxMindDatabase(path)
+        val success = downloader.downloadMaxMindDatabaseToAsync(path, type)
         if (success) {
             log.info { "Downloaded IPLocate.io $type database to $path" }
         }

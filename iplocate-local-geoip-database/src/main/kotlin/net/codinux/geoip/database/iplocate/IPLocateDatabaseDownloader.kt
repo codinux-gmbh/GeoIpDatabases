@@ -1,5 +1,6 @@
 package net.codinux.geoip.database.iplocate
 
+import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.download.Downloader
 import net.dankito.web.client.JavaHttpClientWebClient
 import net.dankito.web.client.WebClient
@@ -18,11 +19,20 @@ open class IPLocateDatabaseDownloader(
     }
 
 
+    open suspend fun downloadMaxMindDatabaseToAsync(downloadTo: Path, type: DatabaseType) = when (type) {
+        DatabaseType.ASN -> downloadIpToAsnMaxMindDatabaseAsync(downloadTo)
+        DatabaseType.Country -> downloadIpToCountryMaxMindDatabaseAsyn(downloadTo)
+        DatabaseType.City -> throw IllegalArgumentException("IPLocate.io does not have a City GeoIP database file")
+    }
+
     open fun downloadIpToCountryCsvDatabase(downloadTo: Path) =
         downloadAndExtract(CountryCsvDownloadUrl, downloadTo, ".csv")
 
     open fun downloadIpToCountryMaxMindDatabase(downloadTo: Path) =
         downloadTo(CountryMaxMindDatabaseUrl, downloadTo)
+
+    open suspend fun downloadIpToCountryMaxMindDatabaseAsyn(downloadTo: Path) =
+        downloadToAsync(CountryMaxMindDatabaseUrl, downloadTo)
 
 
     open fun downloadIpToAsnCsvDatabase(downloadTo: Path) =
@@ -30,5 +40,8 @@ open class IPLocateDatabaseDownloader(
 
     open fun downloadIpToAsnMaxMindDatabase(downloadTo: Path) =
         downloadTo(AsnMaxMindDatabaseUrl, downloadTo)
+
+    open suspend fun downloadIpToAsnMaxMindDatabaseAsync(downloadTo: Path) =
+        downloadToAsync(AsnMaxMindDatabaseUrl, downloadTo)
 
 }

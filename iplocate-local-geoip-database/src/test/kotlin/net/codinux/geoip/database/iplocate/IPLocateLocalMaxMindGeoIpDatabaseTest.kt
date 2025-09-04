@@ -22,8 +22,8 @@ class IPLocateLocalMaxMindGeoIpDatabaseTest {
         val result = underTest.lookupCountry("1.0.0.0")
 
         assertThat(result).isNotNull()
-        assertThat(result!!::countryName).isEqualTo("Australia")
-        assertThat(result::countryIsoCode).isEqualTo("AU")
+        assertThat(result!!::name).isEqualTo("Australia")
+        assertThat(result::isoCode).isEqualTo("AU")
         assertThat(result::continent).isEqualTo(Continent.Oceania)
     }
 

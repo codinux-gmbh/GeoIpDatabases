@@ -66,8 +66,8 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         }
 
     protected open fun mapCountry(country: com.maxmind.geoip2.record.Country, continentCode: String?) = GeoLite2Country(
-        countryIsoCode = country.isoCode,
-        countryName = country.name,
+        isoCode = country.isoCode,
+        name = country.name,
         continent = continentCode?.let { Continent.byCode(continentCode) },
         geoNameId = country.geoNameId,
         isInEuropeanUnion = country.isInEuropeanUnion,
@@ -75,7 +75,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     )
 
     protected open fun mapCity(response: CityResponse) = GeoLite2City(
-        cityName = response.city.name,
+        name = response.city.name,
         country = mapCountry(response.country, response.registeredCountry, response.continent.code),
         geoNameId = response.city.geoNameId,
 

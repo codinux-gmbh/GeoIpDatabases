@@ -7,7 +7,7 @@ import net.codinux.geoip.database.Location
 import net.codinux.geoip.database.Subdivision
 
 open class GeoLite2City(
-    cityName: String?,
+    name: String?,
     country: Country,
     geoNameId: Long?,
 
@@ -19,4 +19,4 @@ open class GeoLite2City(
 
     @JsonIgnore // we do not want to have names in API JSON response
     val names: Map<String, String> = emptyMap(),
-) : City(cityName, country, geoNameId, location, postalCode, leastSpecificSubdivision, mostSpecificSubdivision)
+) : City(name, country, geoNameId, location, postalCode, leastSpecificSubdivision, mostSpecificSubdivision)

@@ -1,7 +1,7 @@
 package net.codinux.geoip.database
 
 open class City(
-    val cityName: String?,
+    val name: String?,
     val country: Country,
     val geoNameId: Long?,
 
@@ -11,5 +11,5 @@ open class City(
     val leastSpecificSubdivision: Subdivision? = null,
     val mostSpecificSubdivision: Subdivision? = null,
 ) {
-    override fun toString() = "$cityName $country"
+    override fun toString() = "$name $country"
 }

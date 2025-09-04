@@ -5,8 +5,8 @@ import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
 
 open class GeoLite2Country(
-    countryIsoCode: String,
-    countryName: String,
+    isoCode: String,
+    name: String,
     continent: Continent?,
 
     geoNameId: Long,
@@ -14,4 +14,4 @@ open class GeoLite2Country(
 
     @JsonIgnore // we do not want to have names in API JSON response
     val names: Map<String, String> = emptyMap(),
-) : Country(countryIsoCode, countryName, continent, geoNameId, isInEuropeanUnion)
+) : Country(isoCode, name, continent, geoNameId, isInEuropeanUnion)

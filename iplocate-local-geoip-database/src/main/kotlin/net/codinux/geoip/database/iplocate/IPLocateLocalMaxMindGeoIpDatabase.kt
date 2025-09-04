@@ -24,8 +24,8 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     fun lookupCountry(ipString: String): Country? = nonNullReader(countryReader, "Country") { countryReader ->
         readRecord(ipString, countryReader) { countryRecordMap ->
             Country(
-                countryIsoCode = countryRecordMap["country_code"]!!,
-                countryName = countryRecordMap["country_name"]!!,
+                isoCode = countryRecordMap["country_code"]!!,
+                name = countryRecordMap["country_name"]!!,
                 continent = Continent.byCode(countryRecordMap["continent_code"]!!)!!,
             )
         }

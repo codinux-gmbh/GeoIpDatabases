@@ -21,8 +21,8 @@ class GeoLite2LocalMaxMindGeoIpDatabaseTest {
         val result = underTest.lookupCountry("1.0.0.0")
 
         assertThat(result).isNotNull()
-        assertThat(result!!::countryName).isEqualTo("Australia")
-        assertThat(result::countryIsoCode).isEqualTo("AU")
+        assertThat(result!!::name).isEqualTo("Australia")
+        assertThat(result::isoCode).isEqualTo("AU")
 //        assertThat(result::continentCode).isEqualTo("OC")
     }
 
@@ -32,8 +32,8 @@ class GeoLite2LocalMaxMindGeoIpDatabaseTest {
         val result = underTest.lookupCity("1.0.0.0")
 
         assertThat(result).isNotNull()
-        assertThat(result!!.country::countryName).isEqualTo("Australia")
-        assertThat(result.country::countryIsoCode).isEqualTo("AU")
+        assertThat(result!!.country::name).isEqualTo("Australia")
+        assertThat(result.country::isoCode).isEqualTo("AU")
 //        assertThat(result::continentCode).isEqualTo("OC")
     }
 

@@ -2,24 +2,21 @@ package net.codinux.geoip.database.geolite2
 
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseType
-import net.codinux.log.logger
+import net.codinux.geoip.database.download.DownloaderBase
 import net.dankito.web.client.KtorWebClient
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.auth.BasicAuthAuthentication
-import net.dankito.web.client.get
 import net.dankito.web.client.head
 import java.nio.file.Path
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.io.path.createDirectories
-import kotlin.io.path.writeBytes
 
 open class GeoLite2DatabaseDownloader(
     accountId: String,
     licenseKey: String,
-    protected val webClient: WebClient = KtorWebClient(authentication = BasicAuthAuthentication(accountId, licenseKey))
-) {
+    webClient: WebClient = KtorWebClient(authentication = BasicAuthAuthentication(accountId, licenseKey))
+) : DownloaderBase("GeoLite2", webClient) {
 
     companion object {
         const val AsnGeoIpDbPermalink = "https://download.maxmind.com/geoip/databases/GeoLite2-ASN/download?suffix=tar.gz"
@@ -35,9 +32,6 @@ open class GeoLite2DatabaseDownloader(
     }
 
 
-    protected val log by logger()
-
-
     suspend fun downloadIfNewer(lastModifiedTime: Instant, downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean =
         if (isDatabaseNewerThan(lastModifiedTime, type, format) == true) {
             downloadTo(downloadTo, type, format)
@@ -49,18 +43,7 @@ open class GeoLite2DatabaseDownloader(
     suspend fun downloadTo(downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean {
         val url = getPermalink(type, format)
 
-        val response = webClient.get<ByteArray>(url)
-
-        if (response.successfulAndBodySet) {
-            downloadTo.parent.createDirectories()
-
-            val bytes = response.body!!
-            downloadTo.writeBytes(bytes)
-
-            return true
-        }
-
-        return false
+        return downloadAsync(url, downloadTo)
     }
 
 

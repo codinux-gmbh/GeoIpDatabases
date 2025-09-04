@@ -83,7 +83,9 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         postalCode = response.postal?.code,
 
         leastSpecificSubdivision = mapSubdivision(response.leastSpecificSubdivision),
-        mostSpecificSubdivision = mapSubdivision(response.mostSpecificSubdivision),
+        // in most cases mostSpecificSubdivision equals leastSpecificSubdivision, but we don't want to add it twice
+        mostSpecificSubdivision = if (response.mostSpecificSubdivision?.geoNameId == response.leastSpecificSubdivision?.geoNameId) null
+                                    else mapSubdivision(response.mostSpecificSubdivision),
 
         names = response.city.names,
     )

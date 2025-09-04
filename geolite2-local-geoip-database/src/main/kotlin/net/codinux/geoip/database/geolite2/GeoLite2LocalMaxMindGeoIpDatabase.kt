@@ -79,7 +79,10 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         country = mapCountry(response.country, response.registeredCountry, response.continent.code),
         geoNameId = response.city.geoNameId,
 
+        // other location fields: metroCode is outdated; averageIncome and populationDensity are only set for USA and only in paid version
         location = response.location?.let { mapLocation(it) },
+        accuracyRadius = response.location?.accuracyRadius,
+        timezone = response.location?.timeZone,
         postalCode = response.postal?.code,
 
         leastSpecificSubdivision = mapSubdivision(response.leastSpecificSubdivision),

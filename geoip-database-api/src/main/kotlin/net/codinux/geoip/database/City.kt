@@ -6,6 +6,8 @@ open class City(
     val geoNameId: Long?,
 
     val location: Location? = null,
+    val accuracyRadius: Int? = null,
+    val timezone: String? = null,
     val postalCode: String? = null,
 
     val leastSpecificSubdivision: Subdivision? = null,

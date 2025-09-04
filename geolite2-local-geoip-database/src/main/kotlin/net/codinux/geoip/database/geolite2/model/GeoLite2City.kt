@@ -11,10 +11,12 @@ open class GeoLite2City(
     geoNameId: Long?,
 
     location: Location?,
-    postalCode: String?,
+    accuracyRadius: Int? = null,
+    timezone: String? = null,
+    postalCode: String? = null,
 
     leastSpecificSubdivision: Subdivision? = null,
     mostSpecificSubdivision: Subdivision? = null,
 
     val names: Map<String, String> = emptyMap(),
-) : City(cityName, country, geoNameId, location, postalCode, leastSpecificSubdivision, mostSpecificSubdivision)
+) : City(cityName, country, geoNameId, location, accuracyRadius, timezone, postalCode, leastSpecificSubdivision, mostSpecificSubdivision)

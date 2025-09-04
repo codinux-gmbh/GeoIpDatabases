@@ -2,6 +2,7 @@ package net.codinux.geoip.service
 
 import io.quarkus.runtime.Startup
 import jakarta.annotation.PostConstruct
+import jakarta.enterprise.event.Event
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,19 +11,20 @@ import kotlinx.coroutines.withContext
 import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.config.GeoLite2Config
 import net.codinux.geoip.config.IPLocateConfig
-import net.codinux.geoip.config.toPathOrNull
 import net.codinux.geoip.database.DatabaseFormat
+import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.geolite2.GeoLite2DatabaseDownloader
 import net.codinux.geoip.database.iplocate.IPLocateDatabaseDownloader
+import net.codinux.geoip.event.DatabaseFileUpdateAttemptEvent
 import net.codinux.log.logger
 import java.nio.file.Path
-import kotlin.jvm.optionals.getOrNull
 
 @Startup
 @Singleton
 class GeoIpDatabasesUpdater(
     private val geoIp: GeoIpConfig,
+    private val updateAttemptEvent: Event<DatabaseFileUpdateAttemptEvent>,
 ) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
@@ -51,17 +53,23 @@ class GeoIpDatabasesUpdater(
 
                 if (asnPath != null) {
                     launch {
-                        if (downloader.downloadIpToAsnMaxMindDatabase(asnPath)) {
+                        val success = downloader.downloadIpToAsnMaxMindDatabase(asnPath)
+                        if (success) {
                             log.info { "Downloaded IPLocate.io ASN database to $asnPath" }
                         }
+                        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.IPLocate, DatabaseType.ASN,
+                            DatabaseFormat.MaxMindGeoIP, success))
                     }
                 }
 
                 if (countryPath != null) {
                     launch {
-                        if (downloader.downloadIpToCountryMaxMindDatabase(countryPath)) {
+                        val success = downloader.downloadIpToCountryMaxMindDatabase(countryPath)
+                        if (success) {
                             log.info { "Downloaded IPLocate.io Country database to $countryPath" }
                         }
+                        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.IPLocate, DatabaseType.Country,
+                            DatabaseFormat.MaxMindGeoIP, success))
                     }
                 }
             }
@@ -114,9 +122,12 @@ class GeoIpDatabasesUpdater(
 
     private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, path: Path, type: DatabaseType, format: DatabaseFormat) {
         launch {
-            if (downloader.downloadTo(path, type, format)) {
+            val success = downloader.downloadTo(path, type, format)
+            if (success) {
                 log.info { "Downloaded GeoLite2 $type database to $path" }
             }
+
+            updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.GeoLite2, type, format, success))
         }
     }
 

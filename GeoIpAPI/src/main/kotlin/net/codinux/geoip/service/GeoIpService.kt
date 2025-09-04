@@ -1,5 +1,6 @@
 package net.codinux.geoip.service
 
+import io.vertx.core.http.HttpServerRequest
 import jakarta.inject.Singleton
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
@@ -23,5 +24,11 @@ class GeoIpService(
     fun lookupAsn(ipAddress: String): AutonomousSystem? =
         ipLocateDatabase.lookupAsn(ipAddress)
             ?: geoLite2Database.lookupAsn(ipAddress)
+
+
+    fun getCallerIp(request: HttpServerRequest): String =
+        request.headers().get("X-Forwarded-For") // if running behind a reverse proxy like a Nginx ingress
+            ?: request.remoteAddress()?.hostAddress()
+            ?: request.host()
 
 }

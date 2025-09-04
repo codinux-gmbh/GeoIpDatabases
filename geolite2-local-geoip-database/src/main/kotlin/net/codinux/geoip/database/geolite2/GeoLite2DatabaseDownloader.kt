@@ -6,10 +6,14 @@ import net.codinux.log.logger
 import net.dankito.web.client.KtorWebClient
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.auth.BasicAuthAuthentication
+import net.dankito.web.client.get
 import net.dankito.web.client.head
+import java.nio.file.Path
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.io.path.createDirectories
+import kotlin.io.path.writeBytes
 
 open class GeoLite2DatabaseDownloader(
     accountId: String,
@@ -32,6 +36,32 @@ open class GeoLite2DatabaseDownloader(
 
 
     protected val log by logger()
+
+
+    suspend fun downloadIfNewer(lastModifiedTime: Instant, downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean =
+        if (isDatabaseNewerThan(lastModifiedTime, type, format) == true) {
+            downloadTo(downloadTo, type, format)
+        } else {
+            false
+        }
+
+
+    suspend fun downloadTo(downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean {
+        val url = getPermalink(type, format)
+
+        val response = webClient.get<ByteArray>(url)
+
+        if (response.successfulAndBodySet) {
+            downloadTo.parent.createDirectories()
+
+            val bytes = response.body!!
+            downloadTo.writeBytes(bytes)
+
+            return true
+        }
+
+        return false
+    }
 
 
     suspend fun isDatabaseNewerThan(lastModifiedTime: Instant, type: DatabaseType, format: DatabaseFormat): Boolean? {

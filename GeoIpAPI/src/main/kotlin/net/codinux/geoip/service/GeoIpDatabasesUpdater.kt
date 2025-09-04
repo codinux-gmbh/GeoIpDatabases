@@ -7,7 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import net.codinux.geoip.config.GeoIpConfiguration
+import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.config.GeoLite2Config
 import net.codinux.geoip.config.IPLocateConfig
 import net.codinux.geoip.config.toPathOrNull
@@ -22,7 +22,7 @@ import kotlin.jvm.optionals.getOrNull
 @Startup
 @Singleton
 class GeoIpDatabasesUpdater(
-    private val geoIp: GeoIpConfiguration
+    private val geoIp: GeoIpConfig,
 ) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
@@ -38,17 +38,14 @@ class GeoIpDatabasesUpdater(
     }
 
     private fun updateDatabases() = coroutineScope.launch {
-        launch { updateIPLocationDatabases(geoIp.ipLocate()) }
+        launch { updateIPLocationDatabases(geoIp.ipLocate) }
 
-        launch { updateGeoLite2Databases(geoIp.geoLite2()) }
+        launch { updateGeoLite2Databases(geoIp.geoLite2) }
     }
 
 
-    private suspend fun updateIPLocationDatabases(config: IPLocateConfig) = withContext(Dispatchers.IO) {
+    private suspend fun updateIPLocationDatabases(config: IPLocateConfig) = with (config) { withContext(Dispatchers.IO) {
         try {
-            val asnPath = config.asn().toPathOrNull()
-            val countryPath = config.country().toPathOrNull()
-
             if (asnPath != null || countryPath != null) {
                 val downloader = IPLocateDatabaseDownloader()
 
@@ -71,18 +68,12 @@ class GeoIpDatabasesUpdater(
         } catch (e: Throwable) {
             log.error(e) { "Could not update IPLocate.io GeoIP databases" }
         }
-    }
+    } }
 
 
-    private suspend fun updateGeoLite2Databases(config: GeoLite2Config) {
+    private suspend fun updateGeoLite2Databases(config: GeoLite2Config) = with (config) {
         try {
-            val asnPath = config.asn().toPathOrNull()
-            val countryPath = config.country().toPathOrNull()
-            val cityPath = config.city().toPathOrNull()
-
             if (asnPath != null || countryPath != null || cityPath != null) {
-                val accountId = config.accountId().getOrNull()
-                val licenseKey = config.licenseKey().getOrNull()
                 if (accountId == null || licenseKey == null) {
                     if (hasGeoLite2CredentialsWarningBeenLogged == false) {
                         hasGeoLite2CredentialsWarningBeenLogged = true

@@ -6,17 +6,17 @@ import io.smallrye.config.WithName
 import java.util.Optional
 
 @ConfigMapping(prefix = "geoip")
-interface GeoIpConfiguration {
+interface GeoIpQuarkusConfig {
 
     @WithName("iplocate")
-    fun ipLocate(): IPLocateConfig
+    fun ipLocate(): IPLocateQuarkusConfig
 
     @WithName("geolite2")
-    fun geoLite2(): GeoLite2Config
+    fun geoLite2(): GeoLite2QuarkusConfig
 
 }
 
-interface IPLocateConfig {
+interface IPLocateQuarkusConfig {
     @WithDefault("/var/lib/geoip/databases/iplocate/ip-to-asn.mmdb")
     fun asn(): Optional<String>
 
@@ -24,7 +24,7 @@ interface IPLocateConfig {
     fun country(): Optional<String>
 }
 
-interface GeoLite2Config {
+interface GeoLite2QuarkusConfig {
     fun accountId(): Optional<String>
 
     fun licenseKey(): Optional<String>

@@ -5,6 +5,8 @@ import io.smallrye.common.annotation.Identifier
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
 import net.codinux.geoip.database.geolite2.GeoLite2LocalMaxMindGeoIpDatabase
+import net.codinux.geoip.database.geolite2.model.GeoLite2City
+import net.codinux.geoip.database.geolite2.model.GeoLite2Country
 import net.codinux.geoip.database.iplocate.IPLocateLocalMaxMindGeoIpDatabase
 import java.nio.file.Files
 import java.nio.file.Path
@@ -14,7 +16,9 @@ import kotlin.io.path.name
 import kotlin.io.path.outputStream
 
 @Singleton
-@RegisterForReflection(registerFullHierarchy = true, classNames = [
+@RegisterForReflection(registerFullHierarchy = true, targets = [
+    GeoLite2City::class, GeoLite2Country::class,
+], classNames = [
     // GeoLite2:
     "com.maxmind.geoip2.model.CountryResponse", "com.maxmind.geoip2.model.CityResponse", "com.maxmind.geoip2.model.AsnResponse",
     "com.maxmind.db.Metadata",

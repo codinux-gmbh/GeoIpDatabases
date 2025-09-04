@@ -8,6 +8,9 @@ import jakarta.ws.rs.PathParam
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
+import net.codinux.geoip.database.AutonomousSystem
+import net.codinux.geoip.database.City
+import net.codinux.geoip.database.Country
 import net.codinux.geoip.service.GeoIpService
 
 // To compare data model with GeoLite2's / GeoIP's REST data model, see https://dev.maxmind.com/geoip/docs/web-services/responses/
@@ -27,7 +30,7 @@ class GeoIpResource(
 
     @GET
     @Path("/country/{ipAddress}")
-    fun lookupCountry(@PathParam("ipAddress") ipAddress: String) =
+    fun lookupCountry(@PathParam("ipAddress") ipAddress: String): Country? =
         service.lookupCountry(ipAddress)
 
 
@@ -40,7 +43,7 @@ class GeoIpResource(
 
     @GET
     @Path("/city/{ipAddress}")
-    fun lookupCity(@PathParam("ipAddress") ipAddress: String) =
+    fun lookupCity(@PathParam("ipAddress") ipAddress: String): City? =
         service.lookupCity(ipAddress)
 
 
@@ -53,7 +56,7 @@ class GeoIpResource(
 
     @GET
     @Path("/asn/{ipAddress}")
-    fun lookupAsn(@PathParam("ipAddress") ipAddress: String) =
+    fun lookupAsn(@PathParam("ipAddress") ipAddress: String): AutonomousSystem? =
         service.lookupAsn(ipAddress)
 
 }

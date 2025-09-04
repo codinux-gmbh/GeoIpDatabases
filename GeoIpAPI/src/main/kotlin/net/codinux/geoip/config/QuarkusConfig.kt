@@ -41,6 +41,11 @@ class QuarkusConfig {
         getDatabaseFileFromResource("GeoLite2-Country.mmdb")
 
     @Produces
+    @Identifier("GeoLite2City")
+    fun geoLite2City(): Path =
+        getDatabaseFileFromResource("GeoLite2-City.mmdb")
+
+    @Produces
     @Identifier("GeoLite2Asn")
     fun geoLite2Asn(): Path =
         getDatabaseFileFromResource("GeoLite2-ASN.mmdb")
@@ -54,8 +59,9 @@ class QuarkusConfig {
 
     @Produces
     fun geoLite2Database(@Identifier("GeoLite2Country") country: Path,
+                         @Identifier("GeoLite2City") city: Path,
                          @Identifier("GeoLite2Asn") asn: Path) = GeoLite2LocalMaxMindGeoIpDatabase(
-        country, asn, null
+        country, asn, city
     )
 
 

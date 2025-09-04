@@ -2,6 +2,7 @@ package net.codinux.geoip.service
 
 import jakarta.inject.Singleton
 import net.codinux.geoip.database.AutonomousSystem
+import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.geolite2.GeoLite2LocalMaxMindGeoIpDatabase
 import net.codinux.geoip.database.iplocate.IPLocateLocalMaxMindGeoIpDatabase
@@ -15,6 +16,9 @@ class GeoIpService(
     fun lookupCountry(ipAddress: String): Country? =
         geoLite2Database.lookupCountry(ipAddress)
             ?: ipLocateDatabase.lookupCountry(ipAddress)
+
+    fun lookupCity(ipAddress: String): City? =
+        geoLite2Database.lookupCity(ipAddress)
 
     fun lookupAsn(ipAddress: String): AutonomousSystem? =
         ipLocateDatabase.lookupAsn(ipAddress)

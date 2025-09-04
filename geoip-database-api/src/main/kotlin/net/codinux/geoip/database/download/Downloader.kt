@@ -71,18 +71,23 @@ open class Downloader(
     protected open fun getFilename(url: String): String = File(URI(url).path).name
 
 
-    protected open fun downloadAndUnzip(downloadUrl: String, unzipTo: Path, fileEndingInZipFile: String, saveDownloadedZipFile: Boolean = false) = runBlocking {
-        downloadAndUnzipAsync(downloadUrl, unzipTo, fileEndingInZipFile, saveDownloadedZipFile)
+
+    protected open fun downloadAndDecompress(downloadUrl: String, decompressTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false) = runBlocking {
+        downloadAndDecompressAsync(downloadUrl, decompressTo, fileEndingInZipFile, saveDownloadedZipFile)
     }
 
-    protected open suspend fun downloadAndUnzipAsync(downloadUrl: String, unzipTo: Path, fileEndingInZipFile: String, saveDownloadedZipFile: Boolean = false): Boolean = try {
+    protected open suspend fun downloadAndDecompressAsync(downloadUrl: String, decompressTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false): Boolean = try {
         downloadAsync(downloadUrl).downloadedFile?.let { downloadedFile ->
             if (saveDownloadedZipFile) {
-                unzipTo.parent.createDirectories()
-                unzipTo.parent.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
+                decompressTo.parent.createDirectories()
+                decompressTo.parent.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
             }
 
-            extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), unzipTo, fileEndingInZipFile)
+            if (downloadedFile.contentType.endsWith("/gzip", true)) {
+                extractor.gunzip(ByteArrayInputStream(downloadedFile.bytes), decompressTo)
+            } else {
+                extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), decompressTo, fileEndingInZipFile ?: "")
+            }
         } ?: false
     } catch (e: Throwable) {
         log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }

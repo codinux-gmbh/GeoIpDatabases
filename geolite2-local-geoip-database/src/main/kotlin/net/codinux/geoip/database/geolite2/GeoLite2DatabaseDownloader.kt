@@ -40,7 +40,7 @@ open class GeoLite2DatabaseDownloader(
         val url = getPermalink(type, format)
 
         return if (format == DatabaseFormat.MaxMindGeoIP) {
-            downloadAndUnzip(url, downloadTo, ".mmdb")
+            downloadAndDecompress(url, downloadTo)
         } else {
             downloadToAsync(url, downloadTo)
         }

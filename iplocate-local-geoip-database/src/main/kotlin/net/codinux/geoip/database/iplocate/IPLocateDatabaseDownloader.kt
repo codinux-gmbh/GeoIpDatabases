@@ -19,14 +19,14 @@ open class IPLocateDatabaseDownloader(
 
 
     open fun downloadIpToCountryCsvDatabase(downloadTo: Path) =
-        downloadAndUnzip(CountryCsvDownloadUrl, downloadTo, ".csv")
+        downloadAndDecompress(CountryCsvDownloadUrl, downloadTo, ".csv")
 
     open fun downloadIpToCountryMaxMindDatabase(downloadTo: Path) =
         downloadTo(CountryMaxMindDatabaseUrl, downloadTo)
 
 
     open fun downloadIpToAsnCsvDatabase(downloadTo: Path) =
-        downloadAndUnzip(AsnCsvDownloadUrl, downloadTo, ".csv")
+        downloadAndDecompress(AsnCsvDownloadUrl, downloadTo, ".csv")
 
     open fun downloadIpToAsnMaxMindDatabase(downloadTo: Path) =
         downloadTo(AsnMaxMindDatabaseUrl, downloadTo)

@@ -2,6 +2,7 @@ package net.codinux.geoip.database.compression
 
 import java.io.InputStream
 import java.nio.file.Path
+import java.util.zip.GZIPInputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import kotlin.io.path.createDirectories
@@ -39,6 +40,17 @@ open class FileExtractor {
             }
 
             false
+        }
+
+    fun gunzip(gzipFile: InputStream, decompressTo: Path): Boolean =
+        GZIPInputStream(gzipFile).use { gzipInputStream ->
+            decompressTo.parent.createDirectories()
+
+            decompressTo.outputStream().use { outputStream ->
+                gzipInputStream.copyTo(outputStream)
+            }
+
+            true
         }
 
 }

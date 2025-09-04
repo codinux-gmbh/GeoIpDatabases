@@ -66,11 +66,11 @@ class QuarkusConfig {
 
 
     private fun getDatabaseFileFromResource(resourceFile: String): Path {
-        val url = QuarkusConfig::class.java.classLoader.getResource("/databases/$resourceFile")!!
+        val url = QuarkusConfig::class.java.classLoader.getResource("databases/$resourceFile")!!
 
         return if (url.protocol == "jar" || url.protocol == "resource") {
             val destination = extractionDir.resolve(Path(resourceFile).name)
-            QuarkusConfig::class.java.classLoader.getResourceAsStream(resourceFile)!!.use { inputStream ->
+            QuarkusConfig::class.java.classLoader.getResourceAsStream("databases/$resourceFile")!!.use { inputStream ->
                 destination.outputStream().use {
                     inputStream.copyTo(it)
                 }

@@ -1,7 +1,17 @@
 package net.codinux.geoip.config
 
 import io.quarkus.runtime.annotations.RegisterForReflection
+import io.smallrye.common.annotation.Identifier
+import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
+import net.codinux.geoip.database.geolite2.GeoLite2LocalMaxMindGeoIpDatabase
+import net.codinux.geoip.database.iplocate.IPLocateLocalMaxMindGeoIpDatabase
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.io.path.Path
+import kotlin.io.path.name
+import kotlin.io.path.outputStream
 
 @Singleton
 @RegisterForReflection(registerFullHierarchy = true, classNames = [
@@ -10,5 +20,46 @@ import jakarta.inject.Singleton
     "com.maxmind.db.Metadata",
 ])
 class QuarkusConfig {
+
+    private val extractionDir by lazy { Files.createTempDirectory("GeoIpDatabases") }
+
+
+    @Produces
+    @Identifier("IPLocateCountry")
+    fun ipLocateCountry(): Path =
+        getDatabaseFileFromResource("ip-to-country.mmdb")
+
+    @Produces
+    @Identifier("GeoLite2Country")
+    fun geoLite2Country(): Path =
+        getDatabaseFileFromResource("GeoLite2-Country.mmdb")
+
+
+    @Produces
+    fun ipLocateDatabase(@Identifier("IPLocateCountry") country: Path) = IPLocateLocalMaxMindGeoIpDatabase(
+        country, null
+    )
+
+    @Produces
+    fun geoLite2Database(@Identifier("GeoLite2Country") country: Path) = GeoLite2LocalMaxMindGeoIpDatabase(
+        country, null, null
+    )
+
+
+    private fun getDatabaseFileFromResource(resourceFile: String): Path {
+        val url = QuarkusConfig::class.java.classLoader.getResource("/databases/$resourceFile")!!
+
+        return if (url.protocol == "jar" || url.protocol == "resource") {
+            val destination = extractionDir.resolve(Path(resourceFile).name)
+            QuarkusConfig::class.java.classLoader.getResourceAsStream(resourceFile)!!.use { inputStream ->
+                destination.outputStream().use {
+                    inputStream.copyTo(it)
+                }
+            }
+            destination
+        } else {
+            Paths.get(url.toURI())
+        }
+    }
 
 }

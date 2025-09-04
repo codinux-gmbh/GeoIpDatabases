@@ -80,8 +80,6 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         geoNameId = response.city.geoNameId,
 
         location = response.location?.let { mapLocation(it) },
-        accuracyRadius = response.location?.accuracyRadius,
-        timezone = response.location?.timeZone,
         postalCode = response.postal?.code,
 
         leastSpecificSubdivision = mapSubdivision(response.leastSpecificSubdivision),

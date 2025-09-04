@@ -1,5 +1,8 @@
 package net.codinux.geoip.database.compression
 
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.zip.GZIPInputStream
@@ -25,11 +28,7 @@ open class FileExtractor {
             var entry: ZipEntry? = zipInputStream.nextEntry
             while (entry != null) {
                 if (entry.name.endsWith(fileEnding, true)) {
-                    targetFile.parent.createDirectories()
-
-                    targetFile.outputStream().use { outputStream ->
-                        zipInputStream.copyTo(outputStream)
-                    }
+                    extractFile(zipInputStream, targetFile)
 
                     zipInputStream.closeEntry()
 
@@ -42,15 +41,42 @@ open class FileExtractor {
             false
         }
 
-    fun gunzip(gzipFile: InputStream, decompressTo: Path): Boolean =
+    fun gunzip(gzipFile: InputStream, targetFile: Path): Boolean =
         GZIPInputStream(gzipFile).use { gzipInputStream ->
-            decompressTo.parent.createDirectories()
+            targetFile.parent.createDirectories()
 
-            decompressTo.outputStream().use { outputStream ->
+            targetFile.outputStream().use { outputStream ->
                 gzipInputStream.copyTo(outputStream)
             }
 
             true
         }
+
+    fun extractTarGz(tarGzFile: InputStream, targetFile: Path, fileEnding: String): Boolean =
+        GzipCompressorInputStream(tarGzFile).use { gzipInputStream ->
+            TarArchiveInputStream(gzipInputStream).use { tarInputStream ->
+                var entry: TarArchiveEntry? = tarInputStream.nextEntry
+                while (entry != null) {
+                    if (entry.name.endsWith(fileEnding, true)) {
+                        extractFile(tarInputStream, targetFile)
+
+                        return@use true
+                    }
+
+                    entry = tarInputStream.nextEntry
+                }
+
+                false
+            }
+        }
+
+
+    protected open fun extractFile(compressedInputStream: InputStream, targetFile: Path) {
+        targetFile.parent.createDirectories()
+
+        targetFile.outputStream().use { outputStream ->
+            compressedInputStream.copyTo(outputStream)
+        }
+    }
 
 }

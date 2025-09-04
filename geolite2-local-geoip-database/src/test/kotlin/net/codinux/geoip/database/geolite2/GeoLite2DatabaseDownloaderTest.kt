@@ -67,7 +67,17 @@ class GeoLite2DatabaseDownloaderTest {
 
     @Test
     fun download_AsnGeoIpDb() = runTest {
-        testDownloadFile(DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, 13_000)
+        testDownloadFile(DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, 10_000_000)
+    }
+
+    @Test
+    fun download_CountryGeoIpDb() = runTest {
+        testDownloadFile(DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, 9_600_000)
+    }
+
+    @Test
+    fun download_CityGeoIpDb() = runTest {
+        testDownloadFile(DatabaseType.City, DatabaseFormat.MaxMindGeoIP, 61_000_000)
     }
 
     private suspend fun testDownloadFile(type: DatabaseType, format: DatabaseFormat, minExpectedSize: Long) {

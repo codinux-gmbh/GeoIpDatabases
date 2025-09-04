@@ -1,5 +1,6 @@
 package net.codinux.geoip.database.geolite2.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.Location
@@ -18,5 +19,6 @@ open class GeoLite2City(
     leastSpecificSubdivision: Subdivision? = null,
     mostSpecificSubdivision: Subdivision? = null,
 
+    @JsonIgnore // we do not want to have names in API JSON response
     val names: Map<String, String> = emptyMap(),
 ) : City(cityName, country, geoNameId, location, accuracyRadius, timezone, postalCode, leastSpecificSubdivision, mostSpecificSubdivision)

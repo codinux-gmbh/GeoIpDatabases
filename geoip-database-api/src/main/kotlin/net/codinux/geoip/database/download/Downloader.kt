@@ -37,14 +37,22 @@ open class Downloader(
         downloadToAsync(downloadUrl, downloadTo)
     }
 
-    protected open suspend fun downloadToAsync(downloadUrl: String, downloadTo: Path): Boolean = try {
+    protected open suspend fun downloadToAsync(downloadUrl: String, downloadTo: Path): DownloadAndSaveFileResult = try {
         val downloadResult = downloadAsync(downloadUrl)
-        saveToFile(downloadResult.successful, downloadTo, downloadResult.downloadedFile!!.bytes)
+        if (downloadResult.downloadedFile == null) {
+            DownloadAndSaveFileResult.error(downloadResult.error)
+        } else {
+            try {
+                val successful = saveToFile(downloadTo, downloadResult.downloadedFile.bytes)
 
-        downloadResult.successful
+                DownloadAndSaveFileResult.downloadSuccess(successful, downloadResult.downloadedFile, downloadTo)
+            } catch (e: Throwable) {
+                DownloadAndSaveFileResult.savingFileError(e, downloadResult.downloadedFile, downloadTo)
+            }
+        }
     } catch (e: Throwable) {
         log.error(e) { "Could not write downloaded $databaseProvider database to file '$downloadTo'" }
-        false
+        DownloadAndSaveFileResult.error(e)
     }
 
     protected open suspend fun downloadAsync(url: String): DownloadFileResult = try {
@@ -115,11 +123,18 @@ open class Downloader(
     }
 
 
-    protected open fun saveToFile(shouldSave: Boolean, downloadTo: Path, fileContent: ByteArray) {
+    protected open fun saveToFile(shouldSave: Boolean, downloadTo: Path, fileContent: ByteArray): Boolean? =
         if (shouldSave) {
-            downloadTo.parent.createDirectories()
-            downloadTo.writeBytes(fileContent)
+            saveToFile(downloadTo, fileContent)
+        } else {
+            null
         }
+
+    protected open fun saveToFile(downloadTo: Path, fileContent: ByteArray): Boolean {
+        downloadTo.parent.createDirectories()
+        downloadTo.writeBytes(fileContent)
+
+        return true
     }
 
     protected open fun parseRfc1123DateTime(dateTime: String): Instant? = try {

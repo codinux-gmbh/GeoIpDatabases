@@ -17,6 +17,7 @@ import net.codinux.geoip.config.IPLocateConfig
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
+import net.codinux.geoip.database.download.DownloadAndSaveFileResult
 import net.codinux.geoip.database.geolite2.GeoLite2DatabaseDownloader
 import net.codinux.geoip.database.iplocate.IPLocateDatabaseDownloader
 import net.codinux.geoip.event.DatabaseFileUpdateAttemptEvent
@@ -55,7 +56,7 @@ class GeoIpDatabasesUpdater(
         try {
             if (asnPath != null || countryPath != null) {
                 val downloader = IPLocateDatabaseDownloader()
-                val jobs = mutableListOf<Deferred<Boolean>>()
+                val jobs = mutableListOf<Deferred<DownloadAndSaveFileResult>>()
 
                 if (asnPath != null) {
                     jobs.add(downloadIPLocateDatabase(downloader, asnPath, DatabaseType.ASN))
@@ -74,7 +75,8 @@ class GeoIpDatabasesUpdater(
     } }
 
     private suspend fun CoroutineScope.downloadIPLocateDatabase(downloader: IPLocateDatabaseDownloader, path: Path, type: DatabaseType) = async {
-        val success = downloader.downloadMaxMindDatabaseToAsync(path, type)
+        val result = downloader.downloadMaxMindDatabaseToAsync(path, type)
+        val success = result.successful
         if (success) {
             log.info { "Downloaded IPLocate.io $type database to $path" }
         }
@@ -82,7 +84,7 @@ class GeoIpDatabasesUpdater(
         updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.IPLocate, type,
             DatabaseFormat.MaxMindGeoIP, success))
 
-        success
+        result
     }
 
 

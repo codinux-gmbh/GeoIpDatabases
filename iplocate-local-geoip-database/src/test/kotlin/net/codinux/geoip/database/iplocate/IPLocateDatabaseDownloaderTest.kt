@@ -2,7 +2,10 @@ package net.codinux.geoip.database.iplocate
 
 import assertk.assertThat
 import assertk.assertions.isGreaterThan
+import assertk.assertions.isGreaterThanOrEqualTo
+import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
+import net.codinux.geoip.database.download.DownloadAndSaveFileResult
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.absolute
@@ -52,6 +55,15 @@ class IPLocateDatabaseDownloaderTest {
         assertDatabase(result, destination, 13_600_000)
     }
 
+
+    private fun assertDatabase(result: DownloadAndSaveFileResult, destination: Path, expectedMinFileSize: Long) {
+        assertThat(result::successfullyDownloaded).isTrue()
+
+        assertDatabase(result.successful, destination, expectedMinFileSize)
+
+        assertThat(result::downloadedFile).isNotNull()
+        assertThat(result.downloadedFile!!.bytes.size.toLong()).isGreaterThanOrEqualTo(expectedMinFileSize)
+    }
 
     private fun assertDatabase(result: Boolean, destination: Path, expectedMinFileSize: Long) {
         assertThat(result).isTrue()

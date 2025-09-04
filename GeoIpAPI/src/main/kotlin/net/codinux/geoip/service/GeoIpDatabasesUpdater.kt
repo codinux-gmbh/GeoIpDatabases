@@ -5,7 +5,10 @@ import jakarta.annotation.PostConstruct
 import jakarta.enterprise.event.Event
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.codinux.geoip.config.GeoIpConfig
@@ -17,6 +20,7 @@ import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.geolite2.GeoLite2DatabaseDownloader
 import net.codinux.geoip.database.iplocate.IPLocateDatabaseDownloader
 import net.codinux.geoip.event.DatabaseFileUpdateAttemptEvent
+import net.codinux.geoip.event.ProviderDatabasesDownloadResultEvent
 import net.codinux.log.logger
 import java.nio.file.Path
 
@@ -25,6 +29,7 @@ import java.nio.file.Path
 class GeoIpDatabasesUpdater(
     private val geoIp: GeoIpConfig,
     private val updateAttemptEvent: Event<DatabaseFileUpdateAttemptEvent>,
+    private val providerDatabasesDownloadEvent: Event<ProviderDatabasesDownloadResultEvent>
 ) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
@@ -40,43 +45,46 @@ class GeoIpDatabasesUpdater(
     }
 
     private fun updateDatabases() = coroutineScope.launch {
-        launch { updateIPLocationDatabases(geoIp.ipLocate) }
+        launch { updateIPLocateDatabases(geoIp.ipLocate) }
 
         launch { updateGeoLite2Databases(geoIp.geoLite2) }
     }
 
 
-    private suspend fun updateIPLocationDatabases(config: IPLocateConfig) = with (config) { withContext(Dispatchers.IO) {
+    private suspend fun updateIPLocateDatabases(config: IPLocateConfig) = with (config) { withContext(Dispatchers.IO) {
         try {
             if (asnPath != null || countryPath != null) {
                 val downloader = IPLocateDatabaseDownloader()
+                val jobs = mutableListOf<Deferred<Boolean>>()
 
                 if (asnPath != null) {
-                    launch {
-                        val success = downloader.downloadIpToAsnMaxMindDatabase(asnPath)
-                        if (success) {
-                            log.info { "Downloaded IPLocate.io ASN database to $asnPath" }
-                        }
-                        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.IPLocate, DatabaseType.ASN,
-                            DatabaseFormat.MaxMindGeoIP, success))
-                    }
+                    jobs.add(downloadIPLocateDatabase(downloader, asnPath, DatabaseType.ASN))
                 }
 
                 if (countryPath != null) {
-                    launch {
-                        val success = downloader.downloadIpToCountryMaxMindDatabase(countryPath)
-                        if (success) {
-                            log.info { "Downloaded IPLocate.io Country database to $countryPath" }
-                        }
-                        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.IPLocate, DatabaseType.Country,
-                            DatabaseFormat.MaxMindGeoIP, success))
-                    }
+                    jobs.add(downloadIPLocateDatabase(downloader, countryPath, DatabaseType.Country))
                 }
+
+                jobs.awaitAll()
+                providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate))
             }
         } catch (e: Throwable) {
             log.error(e) { "Could not update IPLocate.io GeoIP databases" }
         }
     } }
+
+    private suspend fun CoroutineScope.downloadIPLocateDatabase(downloader: IPLocateDatabaseDownloader, path: Path, type: DatabaseType) = async {
+        val success = if (type == DatabaseType.ASN) downloader.downloadIpToAsnMaxMindDatabase(path)
+                      else downloader.downloadIpToCountryMaxMindDatabase(path)
+        if (success) {
+            log.info { "Downloaded IPLocate.io $type database to $path" }
+        }
+
+        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.IPLocate, type,
+            DatabaseFormat.MaxMindGeoIP, success))
+
+        success
+    }
 
 
     private suspend fun updateGeoLite2Databases(config: GeoLite2Config) = with (config) {
@@ -106,29 +114,34 @@ class GeoIpDatabasesUpdater(
 
     private suspend fun updateGeoLite2Databases(accountId: String, licenseKey: String, asnPath: Path?, countryPath: Path?, cityPath: Path?) = withContext(Dispatchers.IO) {
         val downloader = GeoLite2DatabaseDownloader(accountId, licenseKey)
+        val jobs = mutableListOf<Deferred<Boolean>>()
 
         if (asnPath != null) {
-            downloadGeoLite2Database(downloader, asnPath, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP)
+            jobs.add(downloadGeoLite2Database(downloader, asnPath, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP))
         }
 
         if (countryPath != null) {
-            downloadGeoLite2Database(downloader, countryPath, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP)
+            jobs.add(downloadGeoLite2Database(downloader, countryPath, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP))
         }
 
         if (cityPath != null) {
-            downloadGeoLite2Database(downloader, cityPath, DatabaseType.City, DatabaseFormat.MaxMindGeoIP)
+            jobs.add(downloadGeoLite2Database(downloader, cityPath, DatabaseType.City, DatabaseFormat.MaxMindGeoIP))
         }
+
+        jobs.awaitAll()
+
+        providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2))
     }
 
-    private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, path: Path, type: DatabaseType, format: DatabaseFormat) {
-        launch {
-            val success = downloader.downloadTo(path, type, format)
-            if (success) {
-                log.info { "Downloaded GeoLite2 $type database to $path" }
-            }
-
-            updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.GeoLite2, type, format, success))
+    private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, path: Path, type: DatabaseType, format: DatabaseFormat) = async {
+        val success = downloader.downloadTo(path, type, format)
+        if (success) {
+            log.info { "Downloaded GeoLite2 $type database to $path" }
         }
+
+        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.GeoLite2, type, format, success))
+
+        success
     }
 
 }

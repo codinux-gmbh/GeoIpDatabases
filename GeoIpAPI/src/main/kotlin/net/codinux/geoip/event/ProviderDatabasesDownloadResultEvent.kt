@@ -4,4 +4,5 @@ import net.codinux.geoip.database.DatabaseProvider
 
 data class ProviderDatabasesDownloadResultEvent(
     val provider: DatabaseProvider,
+    val anyDatabaseFileUpdated: Boolean
 )

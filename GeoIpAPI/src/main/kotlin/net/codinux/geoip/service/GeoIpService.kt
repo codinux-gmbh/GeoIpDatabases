@@ -49,15 +49,27 @@ class GeoIpService(
 
 
     fun onDatabaseFilesUpdated(@Observes event: ProviderDatabasesDownloadResultEvent) {
-        when (event.provider) {
-            DatabaseProvider.GeoLite2 -> geoLite2Database = GeoLite2LocalMaxMindGeoIpDatabase(config.geoLite2.countryPath,
-                config.geoLite2.asnPath, config.geoLite2.cityPath)
+        if (event.anyDatabaseFileUpdated) {
+            updateDatabaseReaders(event)
 
-            DatabaseProvider.IPLocate -> ipLocateDatabase = IPLocateLocalMaxMindGeoIpDatabase(config.ipLocate.countryPath,
-                config.ipLocate.asnPath)
+            log.info { "Updated database readers for ${event.provider}" }
+        } else {
+            log.info { "Not updating Database readers for ${event.provider} as no database files have been updated" }
         }
+    }
 
-        log.info { "Updated database readers for ${event.provider}" }
+    private fun updateDatabaseReaders(event: ProviderDatabasesDownloadResultEvent) {
+        when (event.provider) {
+            DatabaseProvider.GeoLite2 -> geoLite2Database = GeoLite2LocalMaxMindGeoIpDatabase(
+                config.geoLite2.countryPath,
+                config.geoLite2.asnPath, config.geoLite2.cityPath
+            )
+
+            DatabaseProvider.IPLocate -> ipLocateDatabase = IPLocateLocalMaxMindGeoIpDatabase(
+                config.ipLocate.countryPath,
+                config.ipLocate.asnPath
+            )
+        }
     }
 
 }

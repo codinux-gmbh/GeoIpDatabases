@@ -67,8 +67,10 @@ class GeoIpDatabasesUpdater(
                     jobs.add(downloadIPLocateDatabase(downloader, countryPath, DatabaseType.Country))
                 }
 
-                jobs.awaitAll()
-                providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate))
+                val results = jobs.awaitAll()
+                val anyFileUpdated = results.any { it.successful }
+
+                providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate, anyFileUpdated))
             }
         } catch (e: Throwable) {
             log.error(e) { "Could not update IPLocate.io GeoIP databases" }
@@ -130,9 +132,10 @@ class GeoIpDatabasesUpdater(
             jobs.add(downloadGeoLite2Database(downloader, cityPath, DatabaseType.City, DatabaseFormat.MaxMindGeoIP))
         }
 
-        jobs.awaitAll()
+        val results = jobs.awaitAll()
+        val anyFileUpdated = results.any { it.successful }
 
-        providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2))
+        providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, anyFileUpdated))
     }
 
     private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, path: Path, type: DatabaseType, format: DatabaseFormat) = async {

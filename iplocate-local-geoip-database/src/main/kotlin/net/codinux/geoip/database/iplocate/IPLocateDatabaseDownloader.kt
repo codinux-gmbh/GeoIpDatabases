@@ -39,10 +39,10 @@ open class IPLocateDatabaseDownloader(
     open fun downloadIpToAsnMaxMindDatabase(downloadTo: Path) =
         download(AsnMaxMindDatabaseUrl, downloadTo)
 
-    protected open fun downloadAndUnzip(downloadUrl: String, unzipTo: Path): Boolean = try {
+    protected open fun downloadAndUnzip(downloadUrl: String, unzipTo: Path, deleteDownloadedZipFile: Boolean = true): Boolean = try {
         val downloadTo = Path(unzipTo.absolutePathString() + ".zip")
         if (download(downloadUrl, downloadTo)) {
-            unzip(downloadTo, unzipTo)
+            unzip(downloadTo, unzipTo, deleteDownloadedZipFile)
         } else {
             false
         }
@@ -51,7 +51,7 @@ open class IPLocateDatabaseDownloader(
         false
     }
 
-    protected fun unzip(zipFile: Path, targetFile: Path): Boolean =
+    protected fun unzip(zipFile: Path, targetFile: Path, deleteZipFile: Boolean = true): Boolean =
         ZipInputStream(zipFile.inputStream()).use { zipInputStream ->
             // this implementation assumes there's only one fle / ZipEntry in .zip file, so we don't do a while (entry != null) { }
             val entry: ZipEntry? = zipInputStream.nextEntry
@@ -64,7 +64,9 @@ open class IPLocateDatabaseDownloader(
 
                 zipInputStream.closeEntry()
 
-                zipFile.deleteExisting()
+                if (deleteZipFile) {
+                    zipFile.deleteExisting()
+                }
 
                 true
             } else {

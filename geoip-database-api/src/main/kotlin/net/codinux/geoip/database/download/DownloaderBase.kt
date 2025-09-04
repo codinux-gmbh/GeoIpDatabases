@@ -50,10 +50,10 @@ abstract class DownloaderBase(
     }
 
 
-    protected open fun downloadAndUnzip(downloadUrl: String, unzipTo: Path, deleteDownloadedZipFile: Boolean = true): Boolean = try {
+    protected open fun downloadAndUnzip(downloadUrl: String, unzipTo: Path, fileEndingInZipFile: String, deleteDownloadedZipFile: Boolean = true): Boolean = try {
         val downloadTo = Path(unzipTo.absolutePathString() + ".zip")
         if (download(downloadUrl, downloadTo)) {
-            unzip(downloadTo, unzipTo, deleteDownloadedZipFile)
+            unzip(downloadTo, unzipTo, fileEndingInZipFile, deleteDownloadedZipFile)
         } else {
             false
         }
@@ -62,27 +62,31 @@ abstract class DownloaderBase(
         false
     }
 
-    protected open fun unzip(zipFile: Path, targetFile: Path, deleteZipFile: Boolean = true): Boolean =
+    protected open fun unzip(zipFile: Path, targetFile: Path, fileEnding: String, deleteZipFile: Boolean = true): Boolean =
         ZipInputStream(zipFile.inputStream()).use { zipInputStream ->
             // this implementation assumes there's only one fle / ZipEntry in .zip file, so we don't do a while (entry != null) { }
-            val entry: ZipEntry? = zipInputStream.nextEntry
-            if (entry != null) {
-                targetFile.parent.createDirectories()
+            var entry: ZipEntry? = zipInputStream.nextEntry
+            while (entry != null) {
+                if (entry.name.endsWith(fileEnding, true)) {
+                    targetFile.parent.createDirectories()
 
-                targetFile.outputStream().use { outputStream ->
-                    zipInputStream.copyTo(outputStream)
+                    targetFile.outputStream().use { outputStream ->
+                        zipInputStream.copyTo(outputStream)
+                    }
+
+                    zipInputStream.closeEntry()
+
+                    if (deleteZipFile) {
+                        zipFile.deleteExisting()
+                    }
+
+                    return@use true
                 }
 
-                zipInputStream.closeEntry()
-
-                if (deleteZipFile) {
-                    zipFile.deleteExisting()
-                }
-
-                true
-            } else {
-                false
+                entry = zipInputStream.nextEntry
             }
+
+            false
         }
 
 }

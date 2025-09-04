@@ -10,14 +10,13 @@ import kotlinx.coroutines.withContext
 import net.codinux.geoip.config.GeoIpConfiguration
 import net.codinux.geoip.config.GeoLite2Config
 import net.codinux.geoip.config.IPLocateConfig
+import net.codinux.geoip.config.toPathOrNull
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.geolite2.GeoLite2DatabaseDownloader
 import net.codinux.geoip.database.iplocate.IPLocateDatabaseDownloader
 import net.codinux.log.logger
 import java.nio.file.Path
-import java.util.Optional
-import kotlin.io.path.Path
 import kotlin.jvm.optionals.getOrNull
 
 @Startup
@@ -47,8 +46,8 @@ class GeoIpDatabasesUpdater(
 
     private suspend fun updateIPLocationDatabases(config: IPLocateConfig) = withContext(Dispatchers.IO) {
         try {
-            val asnPath = config.asn().mapOrNull { Path(it) }
-            val countryPath = config.country().mapOrNull { Path(it) }
+            val asnPath = config.asn().toPathOrNull()
+            val countryPath = config.country().toPathOrNull()
 
             if (asnPath != null || countryPath != null) {
                 val downloader = IPLocateDatabaseDownloader()
@@ -77,9 +76,9 @@ class GeoIpDatabasesUpdater(
 
     private suspend fun updateGeoLite2Databases(config: GeoLite2Config) {
         try {
-            val asnPath = config.asn().mapOrNull { Path(it) }
-            val countryPath = config.country().mapOrNull { Path(it) }
-            val cityPath = config.city().mapOrNull { Path(it) }
+            val asnPath = config.asn().toPathOrNull()
+            val countryPath = config.country().toPathOrNull()
+            val cityPath = config.city().toPathOrNull()
 
             if (asnPath != null || countryPath != null || cityPath != null) {
                 val accountId = config.accountId().getOrNull()
@@ -129,9 +128,5 @@ class GeoIpDatabasesUpdater(
             }
         }
     }
-
-
-    private fun <T, R> Optional<T>.mapOrNull(mapper: (T) -> R?): R? =
-        this.map { mapper(it) }.orElse(null)
 
 }

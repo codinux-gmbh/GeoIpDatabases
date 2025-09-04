@@ -3,6 +3,8 @@ package net.codinux.geoip.service
 import io.vertx.core.http.HttpServerRequest
 import jakarta.inject.Singleton
 import jakarta.ws.rs.core.Response
+import net.codinux.geoip.config.GeoIpConfiguration
+import net.codinux.geoip.config.toPathOrNull
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
@@ -11,9 +13,14 @@ import net.codinux.geoip.database.iplocate.IPLocateLocalMaxMindGeoIpDatabase
 
 @Singleton
 class GeoIpService(
-    private val geoLite2Database: GeoLite2LocalMaxMindGeoIpDatabase,
-    private val ipLocateDatabase: IPLocateLocalMaxMindGeoIpDatabase,
+    private val config: GeoIpConfiguration
 ) {
+    private val geoLite2Database = GeoLite2LocalMaxMindGeoIpDatabase(config.geoLite2().country().toPathOrNull(),
+        config.geoLite2().asn().toPathOrNull(), config.geoLite2().city().toPathOrNull())
+
+    private val ipLocateDatabase = IPLocateLocalMaxMindGeoIpDatabase(config.ipLocate().country().toPathOrNull(),
+        config.ipLocate().asn().toPathOrNull())
+
 
     fun lookupCountry(ipAddress: String): Country? =
         geoLite2Database.lookupCountry(ipAddress)

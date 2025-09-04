@@ -3,6 +3,7 @@ package net.codinux.geoip.database.download
 import kotlinx.coroutines.runBlocking
 import net.codinux.geoip.database.compression.FileExtractor
 import net.codinux.log.logger
+import net.dankito.web.client.ResponseDetails
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.get
 import java.io.ByteArrayInputStream
@@ -57,7 +58,7 @@ open class Downloader(
             log.debug { "Downloaded ${bytes.size} bytes for $databaseProvider database '$url'" }
 
             val details = response.responseDetails!!
-            DownloadFileResult.success(DownloadedFile(url, bytes, getFilename(url), details.contentType!!,
+            DownloadFileResult.success(DownloadedFile(url, bytes, getFilename(url, details), details.contentType!!,
                 details.contentLength, details.getHeaderValue("Last-Modified")?.let { parseRfc1123DateTime(it) }, details.getHeaderValue("ETag")))
         } else {
             log.warn(response.error) { "Downloading $databaseProvider database '$url' failed: ${response.statusCode} ${response.error}" }
@@ -68,8 +69,15 @@ open class Downloader(
         DownloadFileResult.error(e)
     }
 
-    protected open fun getFilename(url: String): String = File(URI(url).path).name
+    protected open fun getFilename(url: String, details: ResponseDetails): String {
+        details.getHeaderValue("Content-Disposition")?.let { contentDisposition ->
+            if (contentDisposition.contains("filename=")) {
+                return contentDisposition.substringAfter("filename=").substringBefore(";")
+            }
+        }
 
+        return File(URI(url).path).name
+    }
 
 
     protected open fun downloadAndDecompress(downloadUrl: String, decompressTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false) = runBlocking {

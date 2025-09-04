@@ -3,7 +3,8 @@ package net.codinux.geoip.database.geolite2
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.download.Downloader
-import net.dankito.web.client.KtorWebClient
+import net.dankito.web.client.ClientConfig
+import net.dankito.web.client.JavaHttpClientWebClient
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.auth.BasicAuthAuthentication
 import net.dankito.web.client.head
@@ -13,7 +14,7 @@ import java.time.Instant
 open class GeoLite2DatabaseDownloader(
     accountId: String,
     licenseKey: String,
-    webClient: WebClient = KtorWebClient(authentication = BasicAuthAuthentication(accountId, licenseKey))
+    webClient: WebClient = JavaHttpClientWebClient(ClientConfig(authentication = BasicAuthAuthentication(accountId, licenseKey)))
 ) : Downloader(webClient, "GeoLite2") {
 
     companion object {

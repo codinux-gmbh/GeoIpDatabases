@@ -53,7 +53,13 @@ abstract class DownloaderBase(
     protected open fun downloadAndUnzip(downloadUrl: String, unzipTo: Path, fileEndingInZipFile: String, deleteDownloadedZipFile: Boolean = true): Boolean = try {
         val downloadTo = Path(unzipTo.absolutePathString() + ".zip")
         if (download(downloadUrl, downloadTo)) {
-            unzip(downloadTo, unzipTo, fileEndingInZipFile, deleteDownloadedZipFile)
+            val result = unzip(downloadTo, unzipTo, fileEndingInZipFile)
+
+            if (deleteDownloadedZipFile) {
+                downloadTo.deleteExisting()
+            }
+
+            result
         } else {
             false
         }
@@ -62,7 +68,7 @@ abstract class DownloaderBase(
         false
     }
 
-    protected open fun unzip(zipFile: Path, targetFile: Path, fileEnding: String, deleteZipFile: Boolean = true): Boolean =
+    protected open fun unzip(zipFile: Path, targetFile: Path, fileEnding: String): Boolean =
         ZipInputStream(zipFile.inputStream()).use { zipInputStream ->
             // this implementation assumes there's only one fle / ZipEntry in .zip file, so we don't do a while (entry != null) { }
             var entry: ZipEntry? = zipInputStream.nextEntry
@@ -75,10 +81,6 @@ abstract class DownloaderBase(
                     }
 
                     zipInputStream.closeEntry()
-
-                    if (deleteZipFile) {
-                        zipFile.deleteExisting()
-                    }
 
                     return@use true
                 }

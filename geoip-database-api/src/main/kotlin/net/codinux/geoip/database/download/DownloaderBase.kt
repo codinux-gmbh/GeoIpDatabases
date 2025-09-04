@@ -1,22 +1,18 @@
 package net.codinux.geoip.database.download
 
 import kotlinx.coroutines.runBlocking
+import net.codinux.geoip.database.compression.FileExtractor
 import net.codinux.log.logger
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.get
 import java.io.ByteArrayInputStream
 import java.io.File
-import java.io.InputStream
 import java.net.URI
 import java.nio.file.Path
 import java.time.Instant
 import java.time.format.DateTimeFormatter
-import java.util.Locale
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
+import java.util.*
 import kotlin.io.path.createDirectories
-import kotlin.io.path.inputStream
-import kotlin.io.path.outputStream
 import kotlin.io.path.writeBytes
 
 abstract class DownloaderBase(
@@ -25,6 +21,7 @@ abstract class DownloaderBase(
      */
     protected val databaseProvider: String,
     protected val webClient: WebClient,
+    protected val extractor: FileExtractor = FileExtractor.Default,
 ) {
 
     companion object {
@@ -85,38 +82,12 @@ abstract class DownloaderBase(
                 unzipTo.parent.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
             }
 
-            unzip(ByteArrayInputStream(downloadedFile.bytes), unzipTo, fileEndingInZipFile)
+            extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), unzipTo, fileEndingInZipFile)
         } ?: false
     } catch (e: Throwable) {
         log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }
         false
     }
-
-    protected open fun unzip(zipFile: Path, targetFile: Path, fileEnding: String) =
-        unzip(zipFile.inputStream(), targetFile, fileEnding)
-
-    protected open fun unzip(zipFile: InputStream, targetFile: Path, fileEnding: String): Boolean =
-        ZipInputStream(zipFile).use { zipInputStream ->
-            // this implementation assumes there's only one fle / ZipEntry in .zip file, so we don't do a while (entry != null) { }
-            var entry: ZipEntry? = zipInputStream.nextEntry
-            while (entry != null) {
-                if (entry.name.endsWith(fileEnding, true)) {
-                    targetFile.parent.createDirectories()
-
-                    targetFile.outputStream().use { outputStream ->
-                        zipInputStream.copyTo(outputStream)
-                    }
-
-                    zipInputStream.closeEntry()
-
-                    return@use true
-                }
-
-                entry = zipInputStream.nextEntry
-            }
-
-            false
-        }
 
 
     protected open fun parseRfc1123DateTime(dateTime: String): Instant? = try {

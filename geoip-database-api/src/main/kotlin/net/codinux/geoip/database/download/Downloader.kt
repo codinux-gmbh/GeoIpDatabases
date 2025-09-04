@@ -80,33 +80,33 @@ open class Downloader(
     }
 
 
-    protected open fun downloadAndDecompress(downloadUrl: String, decompressTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false) = runBlocking {
-        downloadAndDecompressAsync(downloadUrl, decompressTo, fileEndingInZipFile, saveDownloadedZipFile)
+    protected open fun downloadAndExtract(downloadUrl: String, extractTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false) = runBlocking {
+        downloadAndExtractAsync(downloadUrl, extractTo, fileEndingInZipFile, saveDownloadedZipFile)
     }
 
-    protected open suspend fun downloadAndDecompressAsync(downloadUrl: String, decompressTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false): Boolean = try {
+    protected open suspend fun downloadAndExtractAsync(downloadUrl: String, extractTo: Path, fileEndingInZipFile: String? = null, saveDownloadedZipFile: Boolean = false): Boolean = try {
         downloadAsync(downloadUrl).downloadedFile?.let { downloadedFile ->
             if (saveDownloadedZipFile) {
-                decompressTo.parent.createDirectories()
-                decompressTo.parent.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
+                extractTo.parent.createDirectories()
+                extractTo.parent.resolve(downloadedFile.filename).writeBytes(downloadedFile.bytes)
             }
 
-            extractFile(downloadedFile, decompressTo, fileEndingInZipFile)
+            extractFile(downloadedFile, extractTo, fileEndingInZipFile)
         } ?: false
     } catch (e: Throwable) {
         log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }
         false
     }
 
-    protected open fun extractFile(downloadedFile: DownloadedFile, decompressTo: Path, fileEndingInZipFile: String?): Boolean =
+    protected open fun extractFile(downloadedFile: DownloadedFile, extractTo: Path, fileEndingInZipFile: String?): Boolean =
         if (downloadedFile.contentType.substringBefore(';').endsWith("/gzip", true)) {
             if (downloadedFile.filename.endsWith(".tar.gz", true)) {
-                extractor.extractTarGz(ByteArrayInputStream(downloadedFile.bytes), decompressTo, fileEndingInZipFile ?: "")
+                extractor.extractTarGz(ByteArrayInputStream(downloadedFile.bytes), extractTo, fileEndingInZipFile ?: "")
             } else {
-                extractor.gunzip(ByteArrayInputStream(downloadedFile.bytes), decompressTo)
+                extractor.gunzip(ByteArrayInputStream(downloadedFile.bytes), extractTo)
             }
         } else {
-            extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), decompressTo, fileEndingInZipFile ?: "")
+            extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), extractTo, fileEndingInZipFile ?: "")
         }
 
 

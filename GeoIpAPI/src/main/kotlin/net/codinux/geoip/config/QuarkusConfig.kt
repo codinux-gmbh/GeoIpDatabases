@@ -30,19 +30,32 @@ class QuarkusConfig {
         getDatabaseFileFromResource("ip-to-country.mmdb")
 
     @Produces
+    @Identifier("IPLocateAsn")
+    fun ipLocateAsn(): Path =
+        getDatabaseFileFromResource("ip-to-asn.mmdb")
+
+
+    @Produces
     @Identifier("GeoLite2Country")
     fun geoLite2Country(): Path =
         getDatabaseFileFromResource("GeoLite2-Country.mmdb")
 
+    @Produces
+    @Identifier("GeoLite2Asn")
+    fun geoLite2Asn(): Path =
+        getDatabaseFileFromResource("GeoLite2-ASN.mmdb")
+
 
     @Produces
-    fun ipLocateDatabase(@Identifier("IPLocateCountry") country: Path) = IPLocateLocalMaxMindGeoIpDatabase(
-        country, null
+    fun ipLocateDatabase(@Identifier("IPLocateCountry") country: Path,
+                         @Identifier("IPLocateAsn") asn: Path) = IPLocateLocalMaxMindGeoIpDatabase(
+        country, asn
     )
 
     @Produces
-    fun geoLite2Database(@Identifier("GeoLite2Country") country: Path) = GeoLite2LocalMaxMindGeoIpDatabase(
-        country, null, null
+    fun geoLite2Database(@Identifier("GeoLite2Country") country: Path,
+                         @Identifier("GeoLite2Asn") asn: Path) = GeoLite2LocalMaxMindGeoIpDatabase(
+        country, asn, null
     )
 
 

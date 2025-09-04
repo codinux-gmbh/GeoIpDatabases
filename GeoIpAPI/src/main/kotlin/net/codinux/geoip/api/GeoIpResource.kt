@@ -20,4 +20,9 @@ class GeoIpResource(
     fun lookupCountry(@PathParam("ipAddress") ipAddress: String) =
         service.lookupCountry(ipAddress)
 
+    @GET
+    @Path("/asn/{ipAddress}")
+    fun lookupAsn(@PathParam("ipAddress") ipAddress: String) =
+        service.lookupAsn(ipAddress)
+
 }

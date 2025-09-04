@@ -79,7 +79,6 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         country = mapCountry(response.country, response.registeredCountry, response.continent.code),
         geoNameId = response.city.geoNameId,
 
-        // other location fields: metroCode is outdated; averageIncome and populationDensity are only set for USA and only in paid version
         location = response.location?.let { mapLocation(it) },
         accuracyRadius = response.location?.accuracyRadius,
         timezone = response.location?.timeZone,
@@ -99,9 +98,8 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         if (location.latitude == null || location.longitude == null) {
             null
         } else {
-            Location(location.latitude, location.longitude, location.accuracyRadius,
-                location.timeZone, location.populationDensity, location.averageIncome
-            )
+            // other location fields: metroCode is outdated; averageIncome and populationDensity are only set for USA and only in paid version
+            Location(location.latitude, location.longitude, location.accuracyRadius, location.timeZone)
         }
 
 

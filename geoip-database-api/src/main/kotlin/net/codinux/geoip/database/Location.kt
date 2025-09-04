@@ -6,8 +6,6 @@ data class Location(
     val accuracyRadius: Int,
 
     val timeZone: String? = null,
-    val populationDensity: Int? = null,
-    val averageIncome: Int? = null,
 ) {
     override fun toString() = "($latitude, $longitude)"
 }

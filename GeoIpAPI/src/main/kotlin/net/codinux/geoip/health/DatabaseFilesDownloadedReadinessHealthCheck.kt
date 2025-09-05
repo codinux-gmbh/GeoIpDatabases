@@ -91,15 +91,15 @@ class DatabaseFilesDownloadedReadinessHealthCheck(
         if (path == null) { // if database file is not configured it's ok. User doesn't want it, so we don't need to download it
             fileDownloadStatus[fileKey] = "Not configured to be download"
             true
-        } else { // otherwise check if file has been downloaded
-            val isDownloaded = path.exists() && path.isRegularFile() && path.fileSize() > 9_000_000 // all GeoIP databases are at least 9 MB large
+        } else { // otherwise check if file has been downloaded or at least has been tried to
+            fileDownloadStatus[fileKey] = getStatusMessage(fileState)
 
-            fileDownloadStatus[fileKey] = getStatusMessage(isDownloaded, fileState)
-
-            isDownloaded
+            // we want to be resilient. If download at least has been tried, we start up, so user can use the other
+            // databases if they are available. And update checks can run.
+            fileState.lastDownloaded != null || fileState.lastUpdateFailedTime != null
         }
 
-    private fun getStatusMessage(isDownloaded: Boolean, fileState: GeoIpDatabaseFileState): String =
+    private fun getStatusMessage(fileState: GeoIpDatabaseFileState): String =
         if (fileState.downloadState == DownloadFileState.UpToDate) {
             "Successfully downloaded at ${formatTime(fileState.lastDownloaded)}"
         } else if (fileState.downloadState == DownloadFileState.DownloadedButUpdateFailed) {

@@ -28,24 +28,28 @@ class GeoIpService(
     private var ipLocateDatabase = AtomicReference(IPLocateLocalMaxMindGeoIpDatabase(config.ipLocate.countryPath,
         config.ipLocate.asnPath))
 
+    private fun geoLite2(): GeoLite2LocalMaxMindGeoIpDatabase = geoLite2Database.get()
+
+    private fun ipLocate(): IPLocateLocalMaxMindGeoIpDatabase = ipLocateDatabase.get()
+
     private val log by logger()
 
 
     fun lookupCountry(ipAddress: String): Country? =
-        geoLite2Database.get().lookupCountry(ipAddress)
-            ?: ipLocateDatabase.get().lookupCountry(ipAddress)
+        geoLite2().lookupCountry(ipAddress)
+            ?: ipLocate().lookupCountry(ipAddress)
 
     fun lookupCity(ipAddress: String): City? =
-        geoLite2Database.get().lookupCity(ipAddress)
+        geoLite2().lookupCity(ipAddress)
 
     fun lookupAsn(ipAddress: String): AutonomousSystem? =
-        ipLocateDatabase.get().lookupAsn(ipAddress)
-            ?: geoLite2Database.get().lookupAsn(ipAddress)
+        ipLocate().lookupAsn(ipAddress)
+            ?: geoLite2().lookupAsn(ipAddress)
 
     fun lookupAll(ipAddress: String) = AllGeoIpDatabaseResponses(
-        ipLocate = GeoIpDatabaseResponses(ipLocateDatabase.get().lookupAsn(ipAddress), ipLocateDatabase.get().lookupCountry(ipAddress), null),
-        geoLite2 = GeoIpDatabaseResponses(geoLite2Database.get().lookupAsn(ipAddress),
-            geoLite2Database.get().lookupCountry(ipAddress), geoLite2Database.get().lookupCity(ipAddress))
+        ipLocate = GeoIpDatabaseResponses(ipLocate().lookupAsn(ipAddress), ipLocate().lookupCountry(ipAddress), null),
+        geoLite2 = GeoIpDatabaseResponses(geoLite2().lookupAsn(ipAddress),
+            geoLite2().lookupCountry(ipAddress), geoLite2().lookupCity(ipAddress))
     )
 
 

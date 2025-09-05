@@ -21,7 +21,7 @@ open class IPLocateDatabaseDownloader(
 
     open suspend fun downloadMaxMindDatabaseToAsync(downloadTo: Path, type: DatabaseType) = when (type) {
         DatabaseType.ASN -> downloadIpToAsnMaxMindDatabaseAsync(downloadTo)
-        DatabaseType.Country -> downloadIpToCountryMaxMindDatabaseAsyn(downloadTo)
+        DatabaseType.Country -> downloadIpToCountryMaxMindDatabaseAsync(downloadTo)
         DatabaseType.City -> throw IllegalArgumentException("IPLocate.io does not have a City GeoIP database file")
     }
 
@@ -31,7 +31,7 @@ open class IPLocateDatabaseDownloader(
     open fun downloadIpToCountryMaxMindDatabase(downloadTo: Path) =
         downloadTo(CountryMaxMindDatabaseUrl, downloadTo)
 
-    open suspend fun downloadIpToCountryMaxMindDatabaseAsyn(downloadTo: Path) =
+    open suspend fun downloadIpToCountryMaxMindDatabaseAsync(downloadTo: Path) =
         downloadToAsync(CountryMaxMindDatabaseUrl, downloadTo)
 
 

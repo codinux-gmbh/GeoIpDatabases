@@ -5,6 +5,9 @@ import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
 import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
+import java.nio.file.Path
+import java.util.Optional
+import kotlin.io.path.Path
 import kotlin.jvm.optionals.getOrNull
 
 @Singleton
@@ -18,10 +21,24 @@ import kotlin.jvm.optionals.getOrNull
 class QuarkusConfig {
 
     @Produces
-    fun geoIpConfig(quarkusConfig: GeoIpQuarkusConfig) = GeoIpConfig(
-        IPLocateConfig(quarkusConfig.ipLocate().asn().toPathOrNull(), quarkusConfig.ipLocate().country().toPathOrNull()),
-        GeoLite2Config(quarkusConfig.geoLite2().accountId().getOrNull(), quarkusConfig.geoLite2().licenseKey().getOrNull(),
-            quarkusConfig.geoLite2().asn().toPathOrNull(), quarkusConfig.geoLite2().country().toPathOrNull(), quarkusConfig.geoLite2().city().toPathOrNull()),
-    )
+    fun geoIpConfig(quarkusConfig: GeoIpQuarkusConfig): GeoIpConfig {
+        val dataFolder = Path(quarkusConfig.dataFolder())
+
+        return GeoIpConfig(
+            IPLocateConfig(path(dataFolder, quarkusConfig.ipLocate().asn()), path(dataFolder, quarkusConfig.ipLocate().country())),
+            GeoLite2Config(quarkusConfig.geoLite2().accountId().getOrNull(), quarkusConfig.geoLite2().licenseKey().getOrNull(),
+                path(dataFolder, quarkusConfig.geoLite2().asn()), path(dataFolder, quarkusConfig.geoLite2().country()),
+                path(dataFolder, quarkusConfig.geoLite2().city())),
+        )
+    }
+
+    private fun path(dataFolder: Path, filePathString: Optional<String>): Path? =
+        filePathString.toPathOrNull()?.let { filePath ->
+            if (filePath.isAbsolute) {
+                filePath
+            } else {
+                dataFolder.resolve(filePath).toAbsolutePath()
+            }
+        }
 
 }

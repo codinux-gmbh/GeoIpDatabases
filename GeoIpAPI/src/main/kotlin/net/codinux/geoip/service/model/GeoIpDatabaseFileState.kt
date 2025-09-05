@@ -1,5 +1,6 @@
 package net.codinux.geoip.service.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
@@ -27,6 +28,7 @@ data class GeoIpDatabaseFileState(
     var contentLength: Long? = null,
 
     var lastUpdateFailedTime: Instant? = null,
+    @JsonIgnore
     var lastUpdateFailedError: Throwable? = null
 ) {
     fun update(file: DownloadedFile) {

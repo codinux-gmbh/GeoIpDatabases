@@ -32,7 +32,8 @@ open class IPLocateDatabaseDownloader(
         }
     }
 
-    // the GitHub lastModified header is very unreliable, returns the time we accessed the file first, so only check ETag
+    // the GitHub lastModified header is the CDN cache timestamp, not file commit time, so we ignore it.
+    // ETag may also gets changed by CDN, but is way more stable.
     override fun checkIfIsNewer(local: FileModifiedInformation, retrieved: FileModifiedInformation): Boolean =
         local.etag == null || local.etag != retrieved.etag
 

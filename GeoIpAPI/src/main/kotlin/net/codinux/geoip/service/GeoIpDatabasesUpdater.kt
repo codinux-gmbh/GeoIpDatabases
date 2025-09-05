@@ -30,6 +30,7 @@ import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
 import net.codinux.log.logger
 import java.nio.file.Path
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
 import kotlin.io.path.nameWithoutExtension
@@ -46,17 +47,28 @@ class GeoIpDatabasesUpdater(
 
     private var hasGeoLite2CredentialsWarningBeenLogged = false
 
-    private val state = GeoIpProvidersDatabaseFileState(
+    private val state: GeoIpProvidersDatabaseFileState = initState()
+
+    private val log by logger()
+
+
+    private fun initState() = GeoIpProvidersDatabaseFileState(
         geoLite2 = GeoIpProviderDatabaseFileStates(
-            asn = GeoIpDatabaseFileState(DatabaseProvider.GeoLite2, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.asnPath, DownloadFileState.NotDownloadedYet),
-            country = GeoIpDatabaseFileState(DatabaseProvider.GeoLite2, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.countryPath, DownloadFileState.NotDownloadedYet),
-            city = GeoIpDatabaseFileState(DatabaseProvider.GeoLite2, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.cityPath, DownloadFileState.NotDownloadedYet),
+            asn = initFileState(DatabaseProvider.GeoLite2, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.asnPath),
+            country = initFileState(DatabaseProvider.GeoLite2, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.countryPath),
+            city = initFileState(DatabaseProvider.GeoLite2, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.cityPath),
         ),
         ipLocate = GeoIpProviderDatabaseFileStates(
-            asn = GeoIpDatabaseFileState(DatabaseProvider.IPLocate, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, geoIp.ipLocate.asnPath, DownloadFileState.NotDownloadedYet),
-            country = GeoIpDatabaseFileState(DatabaseProvider.IPLocate, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, geoIp.ipLocate.countryPath, DownloadFileState.NotDownloadedYet),
+            asn = initFileState(DatabaseProvider.IPLocate, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, geoIp.ipLocate.asnPath),
+            country = initFileState(DatabaseProvider.IPLocate, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, geoIp.ipLocate.countryPath),
             city = GeoIpDatabaseFileState(DatabaseProvider.IPLocate, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, null, DownloadFileState.NotAvailableForProvider),
         )
+    )
+
+    private fun initFileState(provider: DatabaseProvider, type: DatabaseType, format: DatabaseFormat, downloadPath: Path?) = GeoIpDatabaseFileState(
+        provider, type, format, downloadPath,
+        if (downloadPath == null) DownloadFileState.DownloadDisabled else DownloadFileState.NotDownloadedYet,
+        lastModified = downloadPath?.getLastModifiedTime()?.toInstant()
     )
 
     private val log by logger()

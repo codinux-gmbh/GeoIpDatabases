@@ -4,6 +4,7 @@ import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.download.DownloadedFile
+import net.codinux.geoip.database.download.FileModifiedInformation
 import java.nio.file.Path
 import java.time.Instant
 
@@ -41,4 +42,6 @@ data class GeoIpDatabaseFileState(
         this.downloadState = if (downloadState == DownloadFileState.NotDownloadedYet) DownloadFileState.NotDownloadedYet
                              else DownloadFileState.DownloadedButUpdateFailed
     }
+
+    fun toModificationInfo() = FileModifiedInformation(lastModified, etag)
 }

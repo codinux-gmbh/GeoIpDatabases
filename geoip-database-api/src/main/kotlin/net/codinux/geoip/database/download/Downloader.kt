@@ -140,17 +140,20 @@ open class Downloader(
     suspend fun isDatabaseNewerThan(currentModificationInfo: FileModifiedInformation, url: String): Boolean? {
         val modificationInfo = getFileModificationInfo(url)
 
-        return if (currentModificationInfo.lastModified == null && currentModificationInfo.etag == null) {
-            true
-        } else if (currentModificationInfo.lastModified != null && currentModificationInfo.etag != null) {
-            currentModificationInfo.lastModified != modificationInfo.lastModified ||
-                    currentModificationInfo.etag != modificationInfo.etag
-        } else if (currentModificationInfo.lastModified != null) {
-            currentModificationInfo.lastModified != modificationInfo.lastModified
-        } else {
-            currentModificationInfo.etag != modificationInfo.etag
-        }
+        return checkIfIsNewer(currentModificationInfo, modificationInfo)
     }
+
+    protected open fun checkIfIsNewer(local: FileModifiedInformation, retrieved: FileModifiedInformation): Boolean =
+        if (local.lastModified == null && local.etag == null) {
+            true
+        } else if (local.lastModified != null && local.etag != null) {
+            local.lastModified != retrieved.lastModified
+                    || local.etag != retrieved.etag
+        } else if (local.lastModified != null) {
+            local.lastModified != retrieved.lastModified
+        } else {
+            local.etag != retrieved.etag
+        }
 
     suspend fun getFileModificationInfo(url: String): FileModifiedInformation {
         val response = webClient.head(url)

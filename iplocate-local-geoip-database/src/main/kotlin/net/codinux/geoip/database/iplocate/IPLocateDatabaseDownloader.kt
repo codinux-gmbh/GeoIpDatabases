@@ -32,6 +32,10 @@ open class IPLocateDatabaseDownloader(
         }
     }
 
+    // the GitHub lastModified header is very unreliable, returns the time we accessed the file first, so only check ETag
+    override fun checkIfIsNewer(local: FileModifiedInformation, retrieved: FileModifiedInformation): Boolean =
+        local.etag == null || local.etag != retrieved.etag
+
     open suspend fun downloadMaxMindDatabaseToAsync(downloadTo: Path, type: DatabaseType) = when (type) {
         DatabaseType.ASN -> downloadIpToAsnMaxMindDatabaseAsync(downloadTo)
         DatabaseType.Country -> downloadIpToCountryMaxMindDatabaseAsync(downloadTo)

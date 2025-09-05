@@ -90,7 +90,7 @@ class GeoIpDatabasesUpdater(
         try {
             if (asnPath != null || countryPath != null) {
                 val downloader = IPLocateDatabaseDownloader()
-                val jobs = mutableListOf<Deferred<DownloadAndSaveFileResult>>()
+                val jobs = mutableListOf<Deferred<DownloadAndSaveFileResult?>>()
 
                 if (asnPath != null) {
                     jobs.add(downloadIPLocateDatabase(downloader, state.ipLocate.asn))
@@ -100,12 +100,12 @@ class GeoIpDatabasesUpdater(
                     jobs.add(downloadIPLocateDatabase(downloader, state.ipLocate.country))
                 }
 
-                val results = jobs.awaitAll()
-                val anyFileUpdated = results.any { it.successful }
+                val results = jobs.awaitAll().filterNotNull()
+                val successfulResults = results.filter { it.successful }
 
                 // files have been downloaded to temp files. Now move them atomically in place and update DatabaseReaders
-                moveTempFilesATomicallyInPlace(results.mapNotNull { it.savedTo })
-                providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate, anyFileUpdated))
+                moveTempFilesATomicallyInPlace(successfulResults.mapNotNull { it.savedTo })
+                providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate, successfulResults.isNotEmpty()))
             }
         } catch (e: Throwable) {
             log.error(e) { "Could not update IPLocate.io GeoIP databases" }
@@ -114,15 +114,17 @@ class GeoIpDatabasesUpdater(
 
     private suspend fun CoroutineScope.downloadIPLocateDatabase(downloader: IPLocateDatabaseDownloader, state: GeoIpDatabaseFileState) = async {
         // save file to temp file and after all databases have been downloaded move them atomically in place
-        val result = downloader.downloadMaxMindDatabaseToAsync(tempFile(state.downloadPath!!), state.type)
-        val success = result.successful
+        val (hasNewer, result) = downloader.downloadIfNewer(state.toModificationInfo(), tempFile(state.downloadPath!!), state.type, state.format)
+        val success = result != null && result.successful
         if (success) {
             // TODO: too early? wait till files have been swapped out?
             state.update(result.downloadedFile!!)
 
             log.info { "Downloaded ${state.provider} ${state.type} database to ${state.downloadPath}" }
-        } else {
+        } else if (hasNewer) {
             state.updateDownloadFailed()
+        } else {
+            log.info { "Checked ${state.provider} ${state.type} database file but no newer file available" }
         }
 
         updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type,
@@ -159,36 +161,38 @@ class GeoIpDatabasesUpdater(
 
     private suspend fun updateGeoLite2Databases(accountId: String, licenseKey: String, asnPath: Path?, countryPath: Path?, cityPath: Path?) = withContext(Dispatchers.IO) {
         val downloader = GeoLite2DatabaseDownloader(accountId, licenseKey)
-        val jobs = mutableListOf<Deferred<DownloadAndExtractFilesResult>>()
+        val jobs = mutableListOf<Deferred<DownloadAndExtractFilesResult?>>()
 
         if (asnPath != null) {
             jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.asn))
         }
 
         if (countryPath != null) {
-            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.asn))
+            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.country))
         }
 
         if (cityPath != null) {
-            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.asn))
+            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.city))
         }
 
-        val results = jobs.awaitAll()
-        val anyFileUpdated = results.any { it.successful }
+        val results = jobs.awaitAll().filterNotNull()
+        val successfulResults = results.filter { it.successful }
 
         // files have been downloaded to temp files. Now move them atomically in place and update DatabaseReaders
-        moveTempFilesATomicallyInPlace(results.flatMap { it.extractedTo })
-        providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, anyFileUpdated))
+        moveTempFilesATomicallyInPlace(successfulResults.flatMap { it.extractedTo })
+        providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, successfulResults.isNotEmpty()))
     }
 
     private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, state: GeoIpDatabaseFileState) = async {
-        val result = downloader.downloadTo(tempFile(state.downloadPath!!), state.type, state.format)
-        val success = result.successful
+        val (hasNewer, result) = downloader.downloadIfNewer(state.toModificationInfo(), tempFile(state.downloadPath!!), state.type, state.format)
+        val success = result != null && result.successful
         if (success) {
             state.update(result.downloadedFile!!)
             log.info { "Downloaded ${state.provider} ${state.type} database to ${state.downloadPath}" }
-        } else {
+        } else if (hasNewer) {
             state.updateDownloadFailed()
+        } else {
+            log.info { "Checked ${state.provider} ${state.type} database file but no newer file available" }
         }
 
         updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type, state.format, success))

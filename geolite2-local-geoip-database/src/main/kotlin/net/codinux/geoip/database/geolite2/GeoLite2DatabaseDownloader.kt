@@ -31,11 +31,11 @@ open class GeoLite2DatabaseDownloader(
     }
 
 
-    suspend fun downloadIfNewer(modificationInfo: FileModifiedInformation, downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean =
+    suspend fun downloadIfNewer(modificationInfo: FileModifiedInformation, downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Pair<Boolean, DownloadAndExtractFilesResult?> =
         if (isDatabaseNewerThan(modificationInfo, getPermalink(type, format)) == true) {
-            downloadTo(downloadTo, type, format).successful
+            true to downloadTo(downloadTo, type, format)
         } else {
-            false
+            false to null
         }
 
 

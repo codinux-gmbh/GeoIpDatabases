@@ -23,6 +23,10 @@ import net.codinux.geoip.database.geolite2.GeoLite2DatabaseDownloader
 import net.codinux.geoip.database.iplocate.IPLocateDatabaseDownloader
 import net.codinux.geoip.event.DatabaseFileUpdateAttemptEvent
 import net.codinux.geoip.event.ProviderDatabasesDownloadResultEvent
+import net.codinux.geoip.service.model.DownloadFileState
+import net.codinux.geoip.service.model.GeoIpDatabaseFileState
+import net.codinux.geoip.service.model.GeoIpProviderDatabaseFileStates
+import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
 import net.codinux.log.logger
 import java.nio.file.Path
 import kotlin.io.path.deleteIfExists
@@ -41,6 +45,19 @@ class GeoIpDatabasesUpdater(
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private var hasGeoLite2CredentialsWarningBeenLogged = false
+
+    private val state = GeoIpProvidersDatabaseFileState(
+        geoLite2 = GeoIpProviderDatabaseFileStates(
+            asn = GeoIpDatabaseFileState(DatabaseProvider.GeoLite2, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.asnPath, DownloadFileState.NotDownloadedYet),
+            country = GeoIpDatabaseFileState(DatabaseProvider.GeoLite2, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.countryPath, DownloadFileState.NotDownloadedYet),
+            city = GeoIpDatabaseFileState(DatabaseProvider.GeoLite2, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.cityPath, DownloadFileState.NotDownloadedYet),
+        ),
+        ipLocate = GeoIpProviderDatabaseFileStates(
+            asn = GeoIpDatabaseFileState(DatabaseProvider.IPLocate, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, geoIp.ipLocate.asnPath, DownloadFileState.NotDownloadedYet),
+            country = GeoIpDatabaseFileState(DatabaseProvider.IPLocate, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, geoIp.ipLocate.countryPath, DownloadFileState.NotDownloadedYet),
+            city = GeoIpDatabaseFileState(DatabaseProvider.IPLocate, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, null, DownloadFileState.NotAvailableForProvider),
+        )
+    )
 
     private val log by logger()
 
@@ -64,11 +81,11 @@ class GeoIpDatabasesUpdater(
                 val jobs = mutableListOf<Deferred<DownloadAndSaveFileResult>>()
 
                 if (asnPath != null) {
-                    jobs.add(downloadIPLocateDatabase(downloader, asnPath, DatabaseType.ASN))
+                    jobs.add(downloadIPLocateDatabase(downloader, state.ipLocate.asn))
                 }
 
                 if (countryPath != null) {
-                    jobs.add(downloadIPLocateDatabase(downloader, countryPath, DatabaseType.Country))
+                    jobs.add(downloadIPLocateDatabase(downloader, state.ipLocate.country))
                 }
 
                 val results = jobs.awaitAll()
@@ -83,15 +100,20 @@ class GeoIpDatabasesUpdater(
         }
     } }
 
-    private suspend fun CoroutineScope.downloadIPLocateDatabase(downloader: IPLocateDatabaseDownloader, path: Path, type: DatabaseType) = async {
+    private suspend fun CoroutineScope.downloadIPLocateDatabase(downloader: IPLocateDatabaseDownloader, state: GeoIpDatabaseFileState) = async {
         // save file to temp file and after all databases have been downloaded move them atomically in place
-        val result = downloader.downloadMaxMindDatabaseToAsync(tempFile(path), type)
+        val result = downloader.downloadMaxMindDatabaseToAsync(tempFile(state.downloadPath!!), state.type)
         val success = result.successful
         if (success) {
-            log.info { "Downloaded IPLocate.io $type database to $path" }
+            // TODO: too early? wait till files have been swapped out?
+            state.update(result.downloadedFile!!)
+
+            log.info { "Downloaded ${state.provider} ${state.type} database to ${state.downloadPath}" }
+        } else {
+            state.updateDownloadFailed()
         }
 
-        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.IPLocate, type,
+        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type,
             DatabaseFormat.MaxMindGeoIP, success))
 
         result
@@ -128,15 +150,15 @@ class GeoIpDatabasesUpdater(
         val jobs = mutableListOf<Deferred<DownloadAndExtractFilesResult>>()
 
         if (asnPath != null) {
-            jobs.add(downloadGeoLite2Database(downloader, asnPath, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP))
+            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.asn))
         }
 
         if (countryPath != null) {
-            jobs.add(downloadGeoLite2Database(downloader, countryPath, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP))
+            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.asn))
         }
 
         if (cityPath != null) {
-            jobs.add(downloadGeoLite2Database(downloader, cityPath, DatabaseType.City, DatabaseFormat.MaxMindGeoIP))
+            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.asn))
         }
 
         val results = jobs.awaitAll()
@@ -147,14 +169,17 @@ class GeoIpDatabasesUpdater(
         providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, anyFileUpdated))
     }
 
-    private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, path: Path, type: DatabaseType, format: DatabaseFormat) = async {
-        val result = downloader.downloadTo(tempFile(path), type, format)
+    private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, state: GeoIpDatabaseFileState) = async {
+        val result = downloader.downloadTo(tempFile(state.downloadPath!!), state.type, state.format)
         val success = result.successful
         if (success) {
-            log.info { "Downloaded GeoLite2 $type database to $path" }
+            state.update(result.downloadedFile!!)
+            log.info { "Downloaded ${state.provider} ${state.type} database to ${state.downloadPath}" }
+        } else {
+            state.updateDownloadFailed()
         }
 
-        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.GeoLite2, type, format, success))
+        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type, state.format, success))
 
         result
     }

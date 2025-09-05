@@ -38,7 +38,7 @@ import kotlin.io.path.nameWithoutExtension
 @Startup
 @Singleton
 class GeoIpDatabasesUpdater(
-    private val geoIp: GeoIpConfig,
+    private val config: GeoIpConfig,
     private val updateAttemptEvent: Event<DatabaseFileUpdateAttemptEvent>,
     private val providerDatabasesDownloadEvent: Event<ProviderDatabasesDownloadResultEvent>
 ) {
@@ -54,13 +54,13 @@ class GeoIpDatabasesUpdater(
 
     private fun initState() = GeoIpProvidersDatabaseFileState(
         geoLite2 = GeoIpProviderDatabaseFileStates(
-            asn = initFileState(DatabaseProvider.GeoLite2, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.asnPath),
-            country = initFileState(DatabaseProvider.GeoLite2, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.countryPath),
-            city = initFileState(DatabaseProvider.GeoLite2, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, geoIp.geoLite2.cityPath),
+            asn = initFileState(DatabaseProvider.GeoLite2, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, config.geoLite2.asnPath),
+            country = initFileState(DatabaseProvider.GeoLite2, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, config.geoLite2.countryPath),
+            city = initFileState(DatabaseProvider.GeoLite2, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, config.geoLite2.cityPath),
         ),
         ipLocate = GeoIpProviderDatabaseFileStates(
-            asn = initFileState(DatabaseProvider.IPLocate, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, geoIp.ipLocate.asnPath),
-            country = initFileState(DatabaseProvider.IPLocate, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, geoIp.ipLocate.countryPath),
+            asn = initFileState(DatabaseProvider.IPLocate, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, config.ipLocate.asnPath),
+            country = initFileState(DatabaseProvider.IPLocate, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, config.ipLocate.countryPath),
             city = GeoIpDatabaseFileState(DatabaseProvider.IPLocate, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, null, DownloadFileState.NotAvailableForProvider),
         )
     )
@@ -80,9 +80,9 @@ class GeoIpDatabasesUpdater(
     private fun updateDatabases() = coroutineScope.launch {
         log.info { "Checking for database updates ..." }
 
-        launch { updateIPLocateDatabases(geoIp.ipLocate) }
+        launch { updateIPLocateDatabases(config.ipLocate) }
 
-        launch { updateGeoLite2Databases(geoIp.geoLite2) }
+        launch { updateGeoLite2Databases(config.geoLite2) }
     }
 
 

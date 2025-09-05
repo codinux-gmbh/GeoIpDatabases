@@ -6,6 +6,7 @@ import net.codinux.log.logger
 import net.dankito.web.client.ResponseDetails
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.get
+import net.dankito.web.client.head
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.URI
@@ -133,6 +134,33 @@ open class Downloader(
     } catch (e: Throwable) {
         log.error(e) { "Could not unzip downloaded file '$downloadUrl'" }
         DownloadAndExtractFilesResult.error(e)
+    }
+
+
+    suspend fun isDatabaseNewerThan(currentModificationInfo: FileModifiedInformation, url: String): Boolean? {
+        val modificationInfo = getFileModificationInfo(url)
+
+        return if (currentModificationInfo.lastModified == null && currentModificationInfo.etag == null) {
+            true
+        } else if (currentModificationInfo.lastModified != null && currentModificationInfo.etag != null) {
+            currentModificationInfo.lastModified != modificationInfo.lastModified ||
+                    currentModificationInfo.etag != modificationInfo.etag
+        } else if (currentModificationInfo.lastModified != null) {
+            currentModificationInfo.lastModified != modificationInfo.lastModified
+        } else {
+            currentModificationInfo.etag != modificationInfo.etag
+        }
+    }
+
+    suspend fun getFileModificationInfo(url: String): FileModifiedInformation {
+        val response = webClient.head(url)
+
+        val lastModified = response.responseDetails?.getHeaderValue("Last-Modified")?.let {
+            parseRfc1123DateTime(it)
+        }
+        val etag = response.responseDetails?.getHeaderValue("ETag")
+
+        return FileModifiedInformation(lastModified, etag)
     }
 
 

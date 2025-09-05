@@ -4,6 +4,7 @@ import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.download.DownloadAndExtractFilesResult
 import net.codinux.geoip.database.download.Downloader
+import net.codinux.geoip.database.download.FileModifiedInformation
 import net.dankito.web.client.ClientConfig
 import net.dankito.web.client.JavaHttpClientWebClient
 import net.dankito.web.client.WebClient
@@ -30,8 +31,8 @@ open class GeoLite2DatabaseDownloader(
     }
 
 
-    suspend fun downloadIfNewer(lastModifiedTime: Instant, downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean =
-        if (isDatabaseNewerThan(lastModifiedTime, type, format) == true) {
+    suspend fun downloadIfNewer(modificationInfo: FileModifiedInformation, downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Boolean =
+        if (isDatabaseNewerThan(modificationInfo, getPermalink(type, format)) == true) {
             downloadTo(downloadTo, type, format).successful
         } else {
             false
@@ -52,28 +53,11 @@ open class GeoLite2DatabaseDownloader(
     }
 
 
-    suspend fun isDatabaseNewerThan(lastModifiedTime: Instant, type: DatabaseType, format: DatabaseFormat): Boolean? {
-        val buildTime = getDatabaseBuildTime(type, format)
+    suspend fun isDatabaseNewerThan(currentModificationInfo: FileModifiedInformation, type: DatabaseType, format: DatabaseFormat): Boolean? =
+        isDatabaseNewerThan(currentModificationInfo, getPermalink(type, format))
 
-        return if (buildTime == null) {
-            null
-        } else {
-            buildTime > lastModifiedTime
-        }
-    }
-
-    suspend fun getDatabaseBuildTime(type: DatabaseType, format: DatabaseFormat): Instant? {
-        val url = getPermalink(type, format)
-
-        val response = webClient.head(url)
-
-        val lastModified = response.responseDetails?.getHeaderValue("Last-Modified")
-        if (lastModified != null) {
-            return parseRfc1123DateTime(lastModified)
-        }
-
-        return null
-    }
+    suspend fun getFileModificationInfo(type: DatabaseType, format: DatabaseFormat): FileModifiedInformation =
+        getFileModificationInfo(getPermalink(type, format))
 
 
     protected open fun getPermalink(type: DatabaseType, format: DatabaseFormat) = when (type) {

@@ -8,6 +8,7 @@ import assertk.assertions.isTrue
 import kotlinx.coroutines.test.runTest
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseType
+import net.codinux.geoip.database.download.FileModifiedInformation
 import net.codinux.geoip.database.geolite2.test.TestCredentials
 import net.dankito.datetime.LocalDate
 import net.dankito.datetime.toJavaInstant
@@ -59,9 +60,9 @@ class GeoLite2DatabaseDownloaderTest {
     }
 
     private suspend fun testGetDatabaseBuildTime(type: DatabaseType, format: DatabaseFormat) {
-        val result = underTest.getDatabaseBuildTime(type, format)
+        val result = underTest.getFileModificationInfo(type, format)
 
-        assertThat(result).isNotNull().isGreaterThan(MinBuildTime)
+        assertThat(result.lastModified).isNotNull().isGreaterThan(MinBuildTime)
     }
 
 
@@ -83,7 +84,7 @@ class GeoLite2DatabaseDownloaderTest {
     private suspend fun testDownloadGeoIpDatabase(type: DatabaseType, minExpectedSize: Long) {
         val filename = getDownloadFolder().resolve("GeoLite2-$type.mmdb")
 
-        val result = underTest.downloadIfNewer(MinBuildTime, filename, type, DatabaseFormat.MaxMindGeoIP)
+        val result = underTest.downloadIfNewer(FileModifiedInformation(MinBuildTime), filename, type, DatabaseFormat.MaxMindGeoIP)
 
         assertThat(result).isTrue()
         assertThat(filename.fileSize()).isGreaterThanOrEqualTo(minExpectedSize)
@@ -108,7 +109,7 @@ class GeoLite2DatabaseDownloaderTest {
     private suspend fun testDownloadCsvs(type: DatabaseType, ipv4MinExpectedSize: Long, ipv6MinExpectedSize: Long) {
         val destination = getDownloadFolder()
 
-        val result = underTest.downloadIfNewer(MinBuildTime, destination, type, DatabaseFormat.CSV)
+        val result = underTest.downloadIfNewer(FileModifiedInformation(MinBuildTime), destination, type, DatabaseFormat.CSV)
 
         assertThat(result).isTrue()
         assertThat(destination.resolve("GeoLite2-$type-Blocks-IPv4.csv").fileSize()).isGreaterThanOrEqualTo(ipv4MinExpectedSize)

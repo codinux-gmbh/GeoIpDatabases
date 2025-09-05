@@ -52,7 +52,7 @@ class DownloadedFilesStateService(
         try {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(config.filesStatePath.toFile(), filesState)
         } catch (e: Throwable) {
-            log.error(e) { "Could not persisted updated GeoIpProvidersDatabaseFileState" }
+            log.error(e) { "Could not persist updated GeoIpProvidersDatabaseFileState" }
         }
     }
 

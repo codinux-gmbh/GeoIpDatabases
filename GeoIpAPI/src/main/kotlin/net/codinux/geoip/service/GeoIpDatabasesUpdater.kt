@@ -30,6 +30,7 @@ import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
 import net.codinux.log.logger
 import java.nio.file.Path
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
 import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
@@ -68,7 +69,11 @@ class GeoIpDatabasesUpdater(
     private fun initFileState(provider: DatabaseProvider, type: DatabaseType, format: DatabaseFormat, downloadPath: Path?) = GeoIpDatabaseFileState(
         provider, type, format, downloadPath,
         if (downloadPath == null) DownloadFileState.DownloadDisabled else DownloadFileState.NotDownloadedYet,
-        lastModified = downloadPath?.getLastModifiedTime()?.toInstant()
+        lastModified = if (downloadPath != null && downloadPath.exists()) {
+            downloadPath.getLastModifiedTime().toInstant()
+        } else {
+            null
+        }
     )
 
 

@@ -65,10 +65,6 @@ class GeoIpService(
     fun onDatabaseFilesUpdated(@Observes event: ProviderDatabasesDownloadResultEvent) {
         if (event.anyDatabaseFileUpdated) {
             updateDatabaseReaders(event)
-
-            log.info { "Updated database readers for ${event.provider}" }
-        } else {
-            log.info { "Not updating Database readers for ${event.provider} as no database files have been updated" }
         }
     }
 

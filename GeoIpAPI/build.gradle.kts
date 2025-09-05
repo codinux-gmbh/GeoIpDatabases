@@ -31,6 +31,8 @@ dependencies {
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-hibernate-validator")
 
+    implementation("io.quarkus:quarkus-scheduler")
+
     implementation("io.quarkus:quarkus-smallrye-health")
     implementation("io.quarkus:quarkus-micrometer-registry-prometheus")
     implementation("io.quarkus:quarkus-smallrye-openapi")

@@ -1,7 +1,7 @@
 package net.codinux.geoip.service
 
 import io.quarkus.runtime.Startup
-import jakarta.annotation.PostConstruct
+import io.quarkus.scheduler.Scheduled
 import jakarta.enterprise.event.Event
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -71,15 +71,15 @@ class GeoIpDatabasesUpdater(
         lastModified = downloadPath?.getLastModifiedTime()?.toInstant()
     )
 
-    private val log by logger()
 
-
-    @PostConstruct
-    fun init() {
+    @Scheduled(every = "6h")
+    fun runEveryMinute() {
         updateDatabases()
     }
 
     private fun updateDatabases() = coroutineScope.launch {
+        log.info { "Checking for database updates ..." }
+
         launch { updateIPLocateDatabases(geoIp.ipLocate) }
 
         launch { updateGeoLite2Databases(geoIp.geoLite2) }

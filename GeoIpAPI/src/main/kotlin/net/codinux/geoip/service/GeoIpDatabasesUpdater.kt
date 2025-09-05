@@ -41,8 +41,8 @@ class GeoIpDatabasesUpdater(
     private val log by logger()
 
 
-    @Scheduled(every = "1h")
-    fun runEveryMinute() {
+    @Scheduled(every = "6h")
+    fun periodicalFilesUpdateCheck() {
         updateDatabases()
     }
 

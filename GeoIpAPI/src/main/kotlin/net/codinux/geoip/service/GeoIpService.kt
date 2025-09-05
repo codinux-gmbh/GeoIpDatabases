@@ -9,6 +9,7 @@ import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.DatabaseProvider
+import net.codinux.geoip.database.LocalGeoIpDatabase
 import net.codinux.geoip.database.geolite2.GeoLite2LocalMaxMindGeoIpDatabase
 import net.codinux.geoip.database.iplocate.IPLocateLocalMaxMindGeoIpDatabase
 import net.codinux.geoip.event.ProviderDatabasesDownloadResultEvent
@@ -61,16 +62,20 @@ class GeoIpService(
 
     private fun updateDatabaseReaders(event: ProviderDatabasesDownloadResultEvent) {
         when (event.provider) {
-            DatabaseProvider.GeoLite2 -> geoLite2Database.set(GeoLite2LocalMaxMindGeoIpDatabase(
-                config.geoLite2.countryPath,
-                config.geoLite2.asnPath, config.geoLite2.cityPath
-            ))
+            DatabaseProvider.GeoLite2 -> updateAndClose(geoLite2Database, GeoLite2LocalMaxMindGeoIpDatabase(
+                config.geoLite2.countryPath, config.geoLite2.asnPath, config.geoLite2.cityPath))
 
-            DatabaseProvider.IPLocate -> ipLocateDatabase.set(IPLocateLocalMaxMindGeoIpDatabase(
-                config.ipLocate.countryPath,
-                config.ipLocate.asnPath
-            ))
+            DatabaseProvider.IPLocate -> updateAndClose(ipLocateDatabase, IPLocateLocalMaxMindGeoIpDatabase(
+                config.ipLocate.countryPath, config.ipLocate.asnPath))
         }
+    }
+
+    private fun <T : LocalGeoIpDatabase> updateAndClose(databaseRef: AtomicReference<T>, newDatabase: T) {
+        val oldDatabase = databaseRef.get()
+
+        databaseRef.set(newDatabase)
+
+        oldDatabase.close()
     }
 
 }

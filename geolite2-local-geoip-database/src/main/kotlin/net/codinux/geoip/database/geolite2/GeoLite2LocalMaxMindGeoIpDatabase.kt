@@ -7,6 +7,7 @@ import com.maxmind.geoip2.model.CountryResponse
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
+import net.codinux.geoip.database.LocalGeoIpDatabase
 import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
 import net.codinux.geoip.database.Location
@@ -19,7 +20,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
     protected val asnDatabaseFile: Path? = null,
     protected val cityDatabaseFile: Path? = null,
-) {
+) : LocalGeoIpDatabase {
 
     protected val countryReader by lazy { countryDatabaseFile?.let { DatabaseReader.Builder(it.toFile()).build() } }
 
@@ -118,5 +119,12 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
                     "Please pass the path to MaxMind GeoLite2 $type database file to constructor." }
             null
         }
+
+
+    override fun close() {
+        countryReader?.close()
+        cityReader?.close()
+        asnReader?.close()
+    }
 
 }

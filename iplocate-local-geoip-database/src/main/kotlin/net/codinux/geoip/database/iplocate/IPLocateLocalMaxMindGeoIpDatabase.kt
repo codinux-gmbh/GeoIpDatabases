@@ -4,6 +4,7 @@ import com.maxmind.db.Reader
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
+import net.codinux.geoip.database.LocalGeoIpDatabase
 import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
@@ -11,7 +12,7 @@ import java.nio.file.Path
 open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
     protected val asnDatabaseFile: Path? = null,
-) {
+) : LocalGeoIpDatabase {
 
     // we cannot use DatabaseReader as this one checks if it's a .mmdb file from MaxMind
     protected val countryReader by lazy { countryDatabaseFile?.let { Reader(it.toFile()) } }
@@ -68,5 +69,11 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
                     "Please pass the path to IPLocate.io $type database file to constructor." }
             null
         }
+
+
+    override fun close() {
+        asnReader?.close()
+        countryReader?.close()
+    }
 
 }

@@ -16,7 +16,9 @@ import net.codinux.geoip.database.geolite2.GeoLite2DatabaseDownloader
 import net.codinux.geoip.database.iplocate.IPLocateDatabaseDownloader
 import net.codinux.geoip.event.DatabaseFileUpdateAttemptEvent
 import net.codinux.geoip.event.ProviderDatabasesDownloadResultEvent
+import net.codinux.geoip.service.model.DownloadFileState
 import net.codinux.geoip.service.model.GeoIpDatabaseFileState
+import net.codinux.geoip.service.model.GeoIpProviderDatabaseFileStates
 import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
 import net.codinux.log.logger
 import java.nio.file.Path
@@ -34,6 +36,20 @@ class GeoIpDatabasesUpdater(
     private val providerDatabasesDownloadEvent: Event<ProviderDatabasesDownloadResultEvent>
 ) {
 
+    companion object {
+        private val updateFailed = hashSetOf(DownloadFileState.DownloadedButUpdateFailed, DownloadFileState.NotDownloadedYet)
+        private val updateFailedOrDisabled = updateFailed + DownloadFileState.DownloadDisabled
+    }
+
+
+    private val ipLocateDownloader = IPLocateDatabaseDownloader()
+
+    private val geoLite2Downloader: GeoLite2DatabaseDownloader? = if (config.geoLite2.accountId != null && config.geoLite2.licenseKey != null) {
+        GeoLite2DatabaseDownloader(config.geoLite2.accountId, config.geoLite2.licenseKey)
+    } else {
+        null
+    }
+
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private var hasGeoLite2CredentialsWarningBeenLogged = false
@@ -44,6 +60,34 @@ class GeoIpDatabasesUpdater(
     @Scheduled(every = "6h")
     fun periodicalFilesUpdateCheck() {
         updateDatabases()
+    }
+
+    @Scheduled(every = "5m", delayed = "5m")
+    fun reScheduleFailedUpdates() = runBlocking {
+        if (reScheduleAllFilesOfProvider(state.geoLite2)) {
+            updateGeoLite2Databases(config.geoLite2)
+        } else if (geoLite2Downloader != null) {
+            if (state.geoLite2.asn.downloadState in updateFailed) {
+                downloadGeoLite2Database(geoLite2Downloader, state.geoLite2.asn)
+            }
+            if (state.geoLite2.country.downloadState in updateFailed) {
+                downloadGeoLite2Database(geoLite2Downloader, state.geoLite2.country)
+            }
+            if (state.geoLite2.city.downloadState in updateFailed) {
+                downloadGeoLite2Database(geoLite2Downloader, state.geoLite2.city)
+            }
+        }
+
+        if (reScheduleAllFilesOfProvider(state.ipLocate)) {
+            updateIPLocateDatabases(config.ipLocate)
+        } else {
+            if (state.ipLocate.asn.downloadState in updateFailed) {
+                downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.asn)
+            }
+            if (state.ipLocate.country.downloadState in updateFailed) {
+                downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.country)
+            }
+        }
     }
 
     private fun updateDatabases() = coroutineScope.launch {
@@ -58,15 +102,14 @@ class GeoIpDatabasesUpdater(
     private suspend fun updateIPLocateDatabases(config: IPLocateConfig) = with (config) { withContext(Dispatchers.IO) {
         try {
             if (asnPath != null || countryPath != null) {
-                val downloader = IPLocateDatabaseDownloader()
                 val jobs = mutableListOf<Deferred<DownloadAndSaveFileResult?>>()
 
                 if (asnPath != null) {
-                    jobs.add(downloadIPLocateDatabase(downloader, state.ipLocate.asn))
+                    jobs.add(downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.asn))
                 }
 
                 if (countryPath != null) {
-                    jobs.add(downloadIPLocateDatabase(downloader, state.ipLocate.country))
+                    jobs.add(downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.country))
                 }
 
                 val results = jobs.awaitAll().filterNotNull()
@@ -121,15 +164,14 @@ class GeoIpDatabasesUpdater(
                     return
                 }
 
-                updateGeoLite2Databases(accountId, licenseKey, asnPath, countryPath, cityPath)
+                updateGeoLite2Databases(geoLite2Downloader!!, asnPath, countryPath, cityPath)
             }
         } catch (e: Throwable) {
             log.error(e) { "Could not update GeoLite2 databases" }
         }
     }
 
-    private suspend fun updateGeoLite2Databases(accountId: String, licenseKey: String, asnPath: Path?, countryPath: Path?, cityPath: Path?) = withContext(Dispatchers.IO) {
-        val downloader = GeoLite2DatabaseDownloader(accountId, licenseKey)
+    private suspend fun updateGeoLite2Databases(downloader: GeoLite2DatabaseDownloader, asnPath: Path?, countryPath: Path?, cityPath: Path?) = withContext(Dispatchers.IO) {
         val jobs = mutableListOf<Deferred<DownloadAndExtractFilesResult?>>()
 
         if (asnPath != null) {
@@ -168,6 +210,17 @@ class GeoIpDatabasesUpdater(
 
         result
     }
+
+
+    private fun reScheduleAllFilesOfProvider(providerState: GeoIpProviderDatabaseFileStates): Boolean {
+        val downloadStates = listOf(providerState.asn.downloadState, providerState.country.downloadState, providerState.city.downloadState)
+
+        return downloadStates.all { it in updateFailedOrDisabled } &&
+                downloadStates.any { it != DownloadFileState.DownloadDisabled }
+    }
+
+    private fun updateFailed(state: GeoIpDatabaseFileState): Boolean =
+        state.downloadState in updateFailed
 
 
     private fun tempFile(path: Path): Path = path.parent.resolve(path.name + ".tmp")

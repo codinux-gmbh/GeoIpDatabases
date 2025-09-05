@@ -73,7 +73,7 @@ class GeoIpDatabasesUpdater(
                 val successfulResults = results.filter { it.successful }
 
                 // files have been downloaded to temp files. Now move them atomically in place and update DatabaseReaders
-                moveTempFilesATomicallyInPlace(successfulResults.mapNotNull { it.savedTo })
+                moveTempFilesAtomicallyInPlace(successfulResults.mapNotNull { it.savedTo })
                 providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate, successfulResults.isNotEmpty(), state))
             }
         } catch (e: Throwable) {
@@ -148,7 +148,7 @@ class GeoIpDatabasesUpdater(
         val successfulResults = results.filter { it.successful }
 
         // files have been downloaded to temp files. Now move them atomically in place and update DatabaseReaders
-        moveTempFilesATomicallyInPlace(successfulResults.flatMap { it.extractedTo })
+        moveTempFilesAtomicallyInPlace(successfulResults.flatMap { it.extractedTo })
         providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, successfulResults.isNotEmpty(), state))
     }
 
@@ -172,7 +172,7 @@ class GeoIpDatabasesUpdater(
 
     private fun tempFile(path: Path): Path = path.parent.resolve(path.name + ".tmp")
 
-    private fun moveTempFilesATomicallyInPlace(savedFiles: List<Path>) {
+    private fun moveTempFilesAtomicallyInPlace(savedFiles: List<Path>) {
         savedFiles.forEach { tmpFile ->
             val destinationFile = tmpFile.parent.resolve(tmpFile.nameWithoutExtension)
             tmpFile.moveTo(destinationFile, overwrite = true)

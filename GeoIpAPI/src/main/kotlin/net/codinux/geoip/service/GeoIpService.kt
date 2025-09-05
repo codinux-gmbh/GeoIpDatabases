@@ -4,6 +4,8 @@ import io.vertx.core.http.HttpServerRequest
 import jakarta.enterprise.event.Observes
 import jakarta.inject.Singleton
 import jakarta.ws.rs.core.Response
+import net.codinux.geoip.api.dto.AllGeoIpDatabaseResponses
+import net.codinux.geoip.api.dto.GeoIpDatabaseResponses
 import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
@@ -39,6 +41,12 @@ class GeoIpService(
     fun lookupAsn(ipAddress: String): AutonomousSystem? =
         ipLocateDatabase.get().lookupAsn(ipAddress)
             ?: geoLite2Database.get().lookupAsn(ipAddress)
+
+    fun lookupAll(ipAddress: String) = AllGeoIpDatabaseResponses(
+        ipLocate = GeoIpDatabaseResponses(ipLocateDatabase.get().lookupAsn(ipAddress), ipLocateDatabase.get().lookupCountry(ipAddress), null),
+        geoLite2 = GeoIpDatabaseResponses(geoLite2Database.get().lookupAsn(ipAddress),
+            geoLite2Database.get().lookupCountry(ipAddress), geoLite2Database.get().lookupCity(ipAddress))
+    )
 
 
     fun <T> withCallerIp(request: HttpServerRequest, action: (callerIp: String) -> T) =

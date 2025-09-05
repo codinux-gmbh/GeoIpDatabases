@@ -8,6 +8,7 @@ import jakarta.ws.rs.PathParam
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
+import net.codinux.geoip.api.dto.AllGeoIpDatabaseResponses
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
@@ -58,5 +59,18 @@ class GeoIpResource(
     @Path("/asn/{ipAddress}")
     fun lookupAsn(@PathParam("ipAddress") ipAddress: String): AutonomousSystem? =
         service.lookupAsn(ipAddress)
+
+
+    @GET
+    @Path("/all/me")
+    fun lookupAllGeoIpInformationForCaller(@Context request: HttpServerRequest) =
+        service.withCallerIp(request) {
+            service.lookupAll(it)
+        }
+
+    @GET
+    @Path("/all/{ipAddress}")
+    fun lookupAllGeoIpInformation(@PathParam("ipAddress") ipAddress: String): AllGeoIpDatabaseResponses? =
+        service.lookupAll(ipAddress)
 
 }

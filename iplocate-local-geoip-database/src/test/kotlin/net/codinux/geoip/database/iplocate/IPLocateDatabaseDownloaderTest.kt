@@ -1,12 +1,18 @@
 package net.codinux.geoip.database.iplocate
 
 import assertk.assertThat
+import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import assertk.assertions.isTrue
+import kotlinx.coroutines.test.runTest
+import net.codinux.geoip.database.DatabaseFormat
+import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.download.DownloadAndExtractFilesResult
 import net.codinux.geoip.database.download.DownloadAndSaveFileResult
+import net.codinux.geoip.database.download.FileModifiedInformation
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.absolute
@@ -54,6 +60,32 @@ class IPLocateDatabaseDownloaderTest {
         val result = underTest.downloadIpToAsnMaxMindDatabase(destination)
 
         assertDatabase(result, destination, 13_600_000)
+    }
+
+
+    @Test
+    fun downloadIfNewer() = runTest {
+        val type = DatabaseType.Country
+        val format = DatabaseFormat.MaxMindGeoIP
+        val destination = getDownloadDestination("ip-to-country.mmdb")
+
+        // on first attempt - as we have not file modification info yet -, file should get downloaded
+        val firstAttempt = underTest.downloadIfNewer(FileModifiedInformation(null, null), destination, type, format)
+
+        assertThat(firstAttempt::first).isTrue()
+        assertThat(firstAttempt::second).isNotNull()
+        assertThat(firstAttempt.second!!::successful).isTrue()
+        assertThat(firstAttempt.second!!::downloadedFile).isNotNull()
+
+        val downloadedFile = firstAttempt.second!!.downloadedFile!!
+
+
+        // we now have the modification info of the current file, so no further attempt to download this file should be taken
+        val secondAttempt = underTest.downloadIfNewer(FileModifiedInformation(downloadedFile.lastModified, downloadedFile.eTag),
+            destination, type, format)
+
+        assertThat(secondAttempt::first).isFalse()
+        assertThat(secondAttempt::second).isNull()
     }
 
 

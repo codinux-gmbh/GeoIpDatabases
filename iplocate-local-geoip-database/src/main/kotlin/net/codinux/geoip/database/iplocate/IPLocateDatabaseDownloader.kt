@@ -1,7 +1,10 @@
 package net.codinux.geoip.database.iplocate
 
+import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseType
+import net.codinux.geoip.database.download.DownloadAndSaveFileResult
 import net.codinux.geoip.database.download.Downloader
+import net.codinux.geoip.database.download.FileModifiedInformation
 import net.dankito.web.client.JavaHttpClientWebClient
 import net.dankito.web.client.WebClient
 import java.nio.file.Path
@@ -18,6 +21,16 @@ open class IPLocateDatabaseDownloader(
         const val AsnMaxMindDatabaseUrl = "https://github.com/iplocate/ip-address-databases/raw/refs/heads/main/ip-to-asn/ip-to-asn.mmdb?download=true"
     }
 
+
+    suspend fun downloadIfNewer(modificationInfo: FileModifiedInformation, downloadTo: Path, type: DatabaseType, format: DatabaseFormat): Pair<Boolean, DownloadAndSaveFileResult?> {
+        val url = getUrl(type, format)
+
+        return if (isDatabaseNewerThan(modificationInfo, url) == true) {
+            true to downloadToAsync(url, downloadTo)
+        } else {
+            false to null
+        }
+    }
 
     open suspend fun downloadMaxMindDatabaseToAsync(downloadTo: Path, type: DatabaseType) = when (type) {
         DatabaseType.ASN -> downloadIpToAsnMaxMindDatabaseAsync(downloadTo)
@@ -43,5 +56,20 @@ open class IPLocateDatabaseDownloader(
 
     open suspend fun downloadIpToAsnMaxMindDatabaseAsync(downloadTo: Path) =
         downloadToAsync(AsnMaxMindDatabaseUrl, downloadTo)
+
+
+    protected open fun getUrl(type: DatabaseType, format: DatabaseFormat): String = when (type) {
+        DatabaseType.ASN -> when (format) {
+            DatabaseFormat.MaxMindGeoIP -> AsnMaxMindDatabaseUrl
+            DatabaseFormat.CSV -> AsnCsvDownloadUrl
+        }
+
+        DatabaseType.Country -> when (format) {
+            DatabaseFormat.MaxMindGeoIP -> CountryMaxMindDatabaseUrl
+            DatabaseFormat.CSV -> CountryCsvDownloadUrl
+        }
+
+        DatabaseType.City -> throw IllegalArgumentException("IPLocate.io does not have a City GeoIP database file")
+    }
 
 }

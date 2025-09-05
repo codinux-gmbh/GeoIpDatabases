@@ -82,6 +82,18 @@ FROM registry.access.redhat.com/ubi9/openjdk-21:1.23
 
 ENV LANGUAGE='en_US:en'
 
+# create directory for app data (where e.g. by default downloaded GeoIP database files are stored)
+USER 0
+RUN mkdir -p /var/lib/geoip \
+    && chgrp -R 0 /var/lib/geoip \
+    && chmod -R g=u /var/lib/geoip
+
+USER 185
+
+ENV GEOIP_DATA_FOLDER=/var/lib/geoip
+
+VOLUME ["/var/lib/geoip"]
+
 
 # We make four distinct layers so if there are application changes the library layers can be re-used
 COPY --chown=185 build/quarkus-app/lib/ /deployments/lib/

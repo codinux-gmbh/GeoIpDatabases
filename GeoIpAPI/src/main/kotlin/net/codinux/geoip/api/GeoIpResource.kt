@@ -9,6 +9,7 @@ import jakarta.ws.rs.Produces
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
 import net.codinux.geoip.api.dto.AllGeoIpDatabaseResponses
+import net.codinux.geoip.api.dto.GeoIpDatabaseResponses
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
@@ -72,5 +73,18 @@ class GeoIpResource(
     @Path("/all/{ipAddress}")
     fun lookupAllGeoIpInformation(@PathParam("ipAddress") ipAddress: String): AllGeoIpDatabaseResponses? =
         service.lookupAll(ipAddress)
+
+
+    @GET
+    @Path("/best/me")
+    fun lookupBestGeoIpInformationForCaller(@Context request: HttpServerRequest) =
+        service.withCallerIp(request) {
+            service.lookupBest(it)
+        }
+
+    @GET
+    @Path("/best/{ipAddress}")
+    fun lookupBestGeoIpInformation(@PathParam("ipAddress") ipAddress: String): GeoIpDatabaseResponses? =
+        service.lookupBest(ipAddress)
 
 }

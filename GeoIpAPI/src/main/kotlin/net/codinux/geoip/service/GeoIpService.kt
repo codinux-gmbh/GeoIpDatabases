@@ -52,6 +52,12 @@ class GeoIpService(
             geoLite2().lookupCountry(ipAddress), geoLite2().lookupCity(ipAddress))
     )
 
+    fun lookupBest(ipAddress: String) = GeoIpDatabaseResponses(
+        lookupAsn(ipAddress),
+        lookupCountry(ipAddress),
+        lookupCity(ipAddress)
+    )
+
 
     fun <T> withCallerIp(request: HttpServerRequest, action: (callerIp: String) -> T) =
         getCallerIp(request)?.let { action(it) }

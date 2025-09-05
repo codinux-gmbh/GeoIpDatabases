@@ -3,6 +3,8 @@ package net.codinux.geoip.config
 import java.nio.file.Path
 
 data class GeoIpConfig(
+    val filesStatePath: Path,
+
     val ipLocate: IPLocateConfig,
     val geoLite2: GeoLite2Config,
 )

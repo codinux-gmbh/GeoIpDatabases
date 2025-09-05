@@ -4,34 +4,23 @@ import io.quarkus.runtime.Startup
 import io.quarkus.scheduler.Scheduled
 import jakarta.enterprise.event.Event
 import jakarta.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.config.GeoLite2Config
 import net.codinux.geoip.config.IPLocateConfig
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseProvider
-import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.download.DownloadAndExtractFilesResult
 import net.codinux.geoip.database.download.DownloadAndSaveFileResult
 import net.codinux.geoip.database.geolite2.GeoLite2DatabaseDownloader
 import net.codinux.geoip.database.iplocate.IPLocateDatabaseDownloader
 import net.codinux.geoip.event.DatabaseFileUpdateAttemptEvent
 import net.codinux.geoip.event.ProviderDatabasesDownloadResultEvent
-import net.codinux.geoip.service.model.DownloadFileState
 import net.codinux.geoip.service.model.GeoIpDatabaseFileState
-import net.codinux.geoip.service.model.GeoIpProviderDatabaseFileStates
 import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
 import net.codinux.log.logger
 import java.nio.file.Path
 import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
-import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
 import kotlin.io.path.nameWithoutExtension
@@ -40,6 +29,7 @@ import kotlin.io.path.nameWithoutExtension
 @Singleton
 class GeoIpDatabasesUpdater(
     private val config: GeoIpConfig,
+    private val state: GeoIpProvidersDatabaseFileState,
     private val updateAttemptEvent: Event<DatabaseFileUpdateAttemptEvent>,
     private val providerDatabasesDownloadEvent: Event<ProviderDatabasesDownloadResultEvent>
 ) {
@@ -48,36 +38,10 @@ class GeoIpDatabasesUpdater(
 
     private var hasGeoLite2CredentialsWarningBeenLogged = false
 
-    private val state: GeoIpProvidersDatabaseFileState = initState()
-
     private val log by logger()
 
 
-    private fun initState() = GeoIpProvidersDatabaseFileState(
-        geoLite2 = GeoIpProviderDatabaseFileStates(
-            asn = initFileState(DatabaseProvider.GeoLite2, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, config.geoLite2.asnPath),
-            country = initFileState(DatabaseProvider.GeoLite2, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, config.geoLite2.countryPath),
-            city = initFileState(DatabaseProvider.GeoLite2, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, config.geoLite2.cityPath),
-        ),
-        ipLocate = GeoIpProviderDatabaseFileStates(
-            asn = initFileState(DatabaseProvider.IPLocate, DatabaseType.ASN, DatabaseFormat.MaxMindGeoIP, config.ipLocate.asnPath),
-            country = initFileState(DatabaseProvider.IPLocate, DatabaseType.Country, DatabaseFormat.MaxMindGeoIP, config.ipLocate.countryPath),
-            city = GeoIpDatabaseFileState(DatabaseProvider.IPLocate, DatabaseType.City, DatabaseFormat.MaxMindGeoIP, null, DownloadFileState.NotAvailableForProvider),
-        )
-    )
-
-    private fun initFileState(provider: DatabaseProvider, type: DatabaseType, format: DatabaseFormat, downloadPath: Path?) = GeoIpDatabaseFileState(
-        provider, type, format, downloadPath,
-        if (downloadPath == null) DownloadFileState.DownloadDisabled else DownloadFileState.NotDownloadedYet,
-        lastModified = if (downloadPath != null && downloadPath.exists()) {
-            downloadPath.getLastModifiedTime().toInstant()
-        } else {
-            null
-        }
-    )
-
-
-    @Scheduled(every = "6h")
+    @Scheduled(every = "1h")
     fun runEveryMinute() {
         updateDatabases()
     }
@@ -110,7 +74,7 @@ class GeoIpDatabasesUpdater(
 
                 // files have been downloaded to temp files. Now move them atomically in place and update DatabaseReaders
                 moveTempFilesATomicallyInPlace(successfulResults.mapNotNull { it.savedTo })
-                providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate, successfulResults.isNotEmpty()))
+                providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate, successfulResults.isNotEmpty(), state))
             }
         } catch (e: Throwable) {
             log.error(e) { "Could not update IPLocate.io GeoIP databases" }
@@ -185,7 +149,7 @@ class GeoIpDatabasesUpdater(
 
         // files have been downloaded to temp files. Now move them atomically in place and update DatabaseReaders
         moveTempFilesATomicallyInPlace(successfulResults.flatMap { it.extractedTo })
-        providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, successfulResults.isNotEmpty()))
+        providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, successfulResults.isNotEmpty(), state))
     }
 
     private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, state: GeoIpDatabaseFileState) = async {

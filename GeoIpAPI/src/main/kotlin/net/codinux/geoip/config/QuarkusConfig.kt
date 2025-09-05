@@ -5,6 +5,8 @@ import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
 import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
+import net.codinux.geoip.service.DownloadedFilesStateService
+import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
 import java.nio.file.Path
 import java.util.Optional
 import kotlin.io.path.Path
@@ -25,6 +27,7 @@ class QuarkusConfig {
         val dataFolder = Path(quarkusConfig.dataFolder())
 
         return GeoIpConfig(
+            dataFolder.resolve("DownloadedFilesState.json"),
             IPLocateConfig(path(dataFolder, quarkusConfig.ipLocate().asn()), path(dataFolder, quarkusConfig.ipLocate().country())),
             GeoLite2Config(quarkusConfig.geoLite2().accountId().getOrNull(), quarkusConfig.geoLite2().licenseKey().getOrNull(),
                 path(dataFolder, quarkusConfig.geoLite2().asn()), path(dataFolder, quarkusConfig.geoLite2().country()),
@@ -40,5 +43,10 @@ class QuarkusConfig {
                 dataFolder.resolve(filePath).toAbsolutePath()
             }
         }
+
+
+    @Produces
+    fun filesState(persister: DownloadedFilesStateService): GeoIpProvidersDatabaseFileState =
+        persister.initializeFilesState()
 
 }

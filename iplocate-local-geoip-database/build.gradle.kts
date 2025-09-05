@@ -37,6 +37,8 @@ dependencies {
 
     testImplementation(kotlin("test"))
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
+
     testImplementation("com.willowtreeapps.assertk:assertk:$assertKVersion")
 }
 

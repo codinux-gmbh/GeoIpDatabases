@@ -25,6 +25,9 @@ data class GeoIpDatabaseFileState(
     var filename: String? = null,
     var contentType: String? = null,
     var contentLength: Long? = null,
+
+    var lastUpdateFailedTime: Instant? = null,
+    var lastUpdateFailedError: Throwable? = null
 ) {
     fun update(file: DownloadedFile) {
         downloadState = DownloadFileState.UpToDate
@@ -36,11 +39,19 @@ data class GeoIpDatabaseFileState(
         filename = file.filename
         contentType = file.contentType
         contentLength = file.contentLength
+
+        lastUpdateFailedTime = null
+        lastUpdateFailedError = null
     }
 
-    fun updateDownloadFailed() {
+    fun updateDownloadFailed(error: Throwable?) {
         this.downloadState = if (downloadState == DownloadFileState.NotDownloadedYet) DownloadFileState.NotDownloadedYet
                              else DownloadFileState.DownloadedButUpdateFailed
+
+        lastUpdateFailedTime = Instant.now()
+        if (error != null) {
+            lastUpdateFailedError = error
+        }
     }
 
     fun toModificationInfo() = FileModifiedInformation(lastModified, etag)

@@ -91,13 +91,13 @@ class GeoIpDatabasesUpdater(
 
             log.info { "Downloaded ${state.provider} ${state.type} database to ${state.downloadPath}" }
         } else if (hasNewer) {
-            state.updateDownloadFailed()
+            state.updateDownloadFailed(result?.error)
         } else {
             log.info { "Checked ${state.provider} ${state.type} database file but no newer file available" }
         }
 
         updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type,
-            DatabaseFormat.MaxMindGeoIP, success))
+            DatabaseFormat.MaxMindGeoIP, success, this@GeoIpDatabasesUpdater.state))
 
         result
     }
@@ -159,12 +159,12 @@ class GeoIpDatabasesUpdater(
             state.update(result.downloadedFile!!)
             log.info { "Downloaded ${state.provider} ${state.type} database to ${state.downloadPath}" }
         } else if (hasNewer) {
-            state.updateDownloadFailed()
+            state.updateDownloadFailed(result?.errors?.firstOrNull())
         } else {
             log.info { "Checked ${state.provider} ${state.type} database file but no newer file available" }
         }
 
-        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type, state.format, success))
+        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type, state.format, success, this@GeoIpDatabasesUpdater.state))
 
         result
     }

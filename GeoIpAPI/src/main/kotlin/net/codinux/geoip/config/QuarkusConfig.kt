@@ -15,6 +15,8 @@ import kotlin.jvm.optionals.getOrNull
 @Singleton
 @RegisterForReflection(registerFullHierarchy = true, targets = [
     GeoLite2City::class, GeoLite2Country::class,
+
+    GeoIpProvidersDatabaseFileState::class,
 ], classNames = [
     // GeoLite2:
     "com.maxmind.geoip2.model.CountryResponse", "com.maxmind.geoip2.model.CityResponse", "com.maxmind.geoip2.model.AsnResponse",

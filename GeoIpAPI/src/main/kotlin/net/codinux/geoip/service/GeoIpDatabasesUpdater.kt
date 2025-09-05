@@ -25,6 +25,10 @@ import net.codinux.geoip.event.DatabaseFileUpdateAttemptEvent
 import net.codinux.geoip.event.ProviderDatabasesDownloadResultEvent
 import net.codinux.log.logger
 import java.nio.file.Path
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.moveTo
+import kotlin.io.path.name
+import kotlin.io.path.nameWithoutExtension
 
 @Startup
 @Singleton
@@ -70,6 +74,8 @@ class GeoIpDatabasesUpdater(
                 val results = jobs.awaitAll()
                 val anyFileUpdated = results.any { it.successful }
 
+                // files have been downloaded to temp files. Now move them atomically in place and update DatabaseReaders
+                moveTempFilesATomicallyInPlace(results.mapNotNull { it.savedTo })
                 providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate, anyFileUpdated))
             }
         } catch (e: Throwable) {
@@ -78,7 +84,8 @@ class GeoIpDatabasesUpdater(
     } }
 
     private suspend fun CoroutineScope.downloadIPLocateDatabase(downloader: IPLocateDatabaseDownloader, path: Path, type: DatabaseType) = async {
-        val result = downloader.downloadMaxMindDatabaseToAsync(path, type)
+        // save file to temp file and after all databases have been downloaded move them atomically in place
+        val result = downloader.downloadMaxMindDatabaseToAsync(tempFile(path), type)
         val success = result.successful
         if (success) {
             log.info { "Downloaded IPLocate.io $type database to $path" }
@@ -135,11 +142,13 @@ class GeoIpDatabasesUpdater(
         val results = jobs.awaitAll()
         val anyFileUpdated = results.any { it.successful }
 
+        // files have been downloaded to temp files. Now move them atomically in place and update DatabaseReaders
+        moveTempFilesATomicallyInPlace(results.flatMap { it.extractedTo })
         providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, anyFileUpdated))
     }
 
     private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, path: Path, type: DatabaseType, format: DatabaseFormat) = async {
-        val result = downloader.downloadTo(path, type, format)
+        val result = downloader.downloadTo(tempFile(path), type, format)
         val success = result.successful
         if (success) {
             log.info { "Downloaded GeoLite2 $type database to $path" }
@@ -148,6 +157,18 @@ class GeoIpDatabasesUpdater(
         updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(DatabaseProvider.GeoLite2, type, format, success))
 
         result
+    }
+
+
+    private fun tempFile(path: Path): Path = path.parent.resolve(path.name + ".tmp")
+
+    private fun moveTempFilesATomicallyInPlace(savedFiles: List<Path>) {
+        savedFiles.forEach { tmpFile ->
+            val destinationFile = tmpFile.parent.resolve(tmpFile.nameWithoutExtension)
+            tmpFile.moveTo(destinationFile, overwrite = true)
+
+            tmpFile.deleteIfExists()
+        }
     }
 
 }

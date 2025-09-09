@@ -20,6 +20,10 @@ import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.LookupResult
 import net.codinux.geoip.service.GeoIpService
+import org.eclipse.microprofile.openapi.annotations.Operation
+import org.eclipse.microprofile.openapi.annotations.media.Content
+import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 
 // To compare data model with GeoLite2's / GeoIP's REST data model, see https://dev.maxmind.com/geoip/docs/web-services/responses/
 @Path("/api/v1")
@@ -31,6 +35,11 @@ class GeoIpResource(
 
     @GET
     @Path("/country/me")
+    @Operation(summary = "Lookup country for the IP address of the caller")
+    @APIResponse(responseCode = "200", description = "Country found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = Country::class))])
+    @APIResponse(responseCode = "400", description = "Invalid IP address")
+    @APIResponse(responseCode = "404", description = "No data for the supplied IP")
     fun lookupCallersCountry(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
             service.lookupCountry(it)
@@ -38,6 +47,11 @@ class GeoIpResource(
 
     @GET
     @Path("/country/{ipAddress}")
+    @Operation(summary = "Lookup country for an IP address")
+    @APIResponse(responseCode = "200", description = "Country found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = Country::class))])
+    @APIResponse(responseCode = "400", description = "Invalid IP address")
+    @APIResponse(responseCode = "404", description = "No data for the supplied IP")
     fun lookupCountry(@PathParam("ipAddress") ipAddress: String): Country =
         mapResult {
             service.lookupCountry(ipAddress)
@@ -46,6 +60,12 @@ class GeoIpResource(
 
     @GET
     @Path("/city/me")
+    @Operation(summary = "Lookup city for the IP address of the caller")
+    @APIResponse(responseCode = "200", description = "City found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = City::class))])
+    @APIResponse(responseCode = "400", description = "Invalid IP address")
+    @APIResponse(responseCode = "404", description = "No data for the supplied IP")
+    @APIResponse(responseCode = "501", description = "If the GeoIP database provider does not support looking up cities")
     fun lookupCallersCity(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
             service.lookupCity(it)
@@ -53,6 +73,12 @@ class GeoIpResource(
 
     @GET
     @Path("/city/{ipAddress}")
+    @Operation(summary = "Lookup city for an IP address")
+    @APIResponse(responseCode = "200", description = "City found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = City::class))])
+    @APIResponse(responseCode = "400", description = "Invalid IP address")
+    @APIResponse(responseCode = "404", description = "No data for the supplied IP")
+    @APIResponse(responseCode = "501", description = "If the GeoIP database provider does not support looking up cities")
     fun lookupCity(@PathParam("ipAddress") ipAddress: String): City =
         mapResult {
             service.lookupCity(ipAddress)
@@ -61,6 +87,11 @@ class GeoIpResource(
 
     @GET
     @Path("/asn/me")
+    @Operation(summary = "Lookup autonomous system for the IP address of the caller")
+    @APIResponse(responseCode = "200", description = "Autonomous system found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AutonomousSystem::class))])
+    @APIResponse(responseCode = "400", description = "Invalid IP address")
+    @APIResponse(responseCode = "404", description = "No data for the supplied IP")
     fun lookupCallersAsn(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
             service.lookupAsn(it)
@@ -68,6 +99,11 @@ class GeoIpResource(
 
     @GET
     @Path("/asn/{ipAddress}")
+    @Operation(summary = "Lookup autonomous system for an IP address")
+    @APIResponse(responseCode = "200", description = "Autonomous system found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AutonomousSystem::class))])
+    @APIResponse(responseCode = "400", description = "Invalid IP address")
+    @APIResponse(responseCode = "404", description = "No data for the supplied IP")
     fun lookupAsn(@PathParam("ipAddress") ipAddress: String): AutonomousSystem? =
         mapResult {
             service.lookupAsn(ipAddress)
@@ -76,6 +112,7 @@ class GeoIpResource(
 
     @GET
     @Path("/all/me")
+    @Operation(summary = "Lookup all available geo information from all GeoIP database providers for the IP address of the caller")
     fun lookupAllGeoIpInformationForCaller(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
             service.lookupAll(it)
@@ -83,12 +120,15 @@ class GeoIpResource(
 
     @GET
     @Path("/all/{ipAddress}")
+    @Operation(summary = "Lookup all available geo information from all GeoIP database providers for an IP address")
     fun lookupAllGeoIpInformation(@PathParam("ipAddress") ipAddress: String): AllGeoIpDatabaseResponses? =
         service.lookupAll(ipAddress)
 
 
     @GET
     @Path("/best/me")
+    @Operation(summary = "Lookup geo information from GeoIP database provider that provides the best information for a " +
+            "type like City from GeoLite2 and Autonomous System from IPLocate for the IP address of the caller")
     fun lookupBestGeoIpInformationForCaller(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
             service.lookupBest(it)
@@ -96,6 +136,8 @@ class GeoIpResource(
 
     @GET
     @Path("/best/{ipAddress}")
+    @Operation(summary = "Lookup geo information from GeoIP database provider that provides the best information for a " +
+            "type like City from GeoLite2 and Autonomous System from IPLocate for an IP address")
     fun lookupBestGeoIpInformation(@PathParam("ipAddress") ipAddress: String): GeoIpDatabaseResponses? =
         service.lookupBest(ipAddress)
 

@@ -119,8 +119,8 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         if (reader != null) {
             val optionalResult = block(reader)
 
-            optionalResult.map { LookupResult.Success(it) }
-                .getOrNull() ?: LookupResult.NoRecordForIp
+            optionalResult.map { LookupResult.Success(provider, it) }
+                .getOrNull() ?: LookupResult.NoRecordForIp(provider, type)
         } else {
             // TODO: log only once per period, e.g. only once per 5 min
             log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
@@ -134,7 +134,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         if (e is FileNotFoundException) {
             LookupResult.DatabaseFileMissingAtConfiguredPath(provider, type, getPathForType(type))
         } else {
-            LookupResult.InternalError(e)
+            LookupResult.InternalError(provider, type, e)
         }
     }
 

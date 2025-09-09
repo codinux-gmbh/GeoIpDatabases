@@ -11,21 +11,21 @@ abstract class LocalGeoIpDatabase(
 
     open fun lookupAsn(ipString: String) = ipMapper.toInetAddressOrNull(ipString)?.let { ip ->
         lookupAsn(ip)
-    } ?: LookupResult.InvalidIp
+    } ?: LookupResult.InvalidIp(provider, DatabaseType.ASN)
 
     abstract fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem>
 
 
     open fun lookupCountry(ipString: String) = ipMapper.toInetAddressOrNull(ipString)?.let { ip ->
         lookupCountry(ip)
-    } ?: LookupResult.InvalidIp
+    } ?: LookupResult.InvalidIp(provider, DatabaseType.Country)
 
     abstract fun lookupCountry(ip: InetAddress): LookupResult<Country>
 
 
     open fun lookupCity(ipString: String) = ipMapper.toInetAddressOrNull(ipString)?.let { ip ->
         lookupCity(ip)
-    } ?: LookupResult.InvalidIp
+    } ?: LookupResult.InvalidIp(provider, DatabaseType.City)
 
     abstract fun lookupCity(ip: InetAddress): LookupResult<City>
 

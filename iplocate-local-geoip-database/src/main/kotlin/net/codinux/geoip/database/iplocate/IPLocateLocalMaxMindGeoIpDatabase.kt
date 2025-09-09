@@ -31,7 +31,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
 
 
     override fun lookupCountry(ip: InetAddress): LookupResult<Country> = nonNullReader(this::countryReader, DatabaseType.Country) { countryReader ->
-        readRecord(ip, countryReader) { countryRecordMap ->
+        readRecord(ip, countryReader, DatabaseType.Country) { countryRecordMap ->
             Country(
                 isoCode = countryRecordMap["country_code"]!!,
                 name = countryRecordMap["country_name"]!!,
@@ -40,10 +40,10 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
         }
     }
 
-    override fun lookupCity(ip: InetAddress): LookupResult<City> = LookupResult.UnsupportedLookup
+    override fun lookupCity(ip: InetAddress): LookupResult<City> = LookupResult.UnsupportedLookup(provider, DatabaseType.City)
 
     override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(this::asnReader, DatabaseType.ASN) { asnReader ->
-        readRecord(ip, asnReader) { asnRecordMap ->
+        readRecord(ip, asnReader, DatabaseType.ASN) { asnRecordMap ->
             AutonomousSystem(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
                 name = asnRecordMap["name"]!!,
@@ -56,16 +56,16 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     }
 
 
-    protected open fun <T> readRecord(inetAddress: InetAddress, reader: Reader, mapper: (Map<String, String>) -> T): LookupResult<T> = try {
+    protected open fun <T> readRecord(inetAddress: InetAddress, reader: Reader, type: DatabaseType, mapper: (Map<String, String>) -> T): LookupResult<T> = try {
         val databaseRecord = reader.getRecord(inetAddress, Map::class.java)
 
         @Suppress("UNCHECKED_CAST")
         (databaseRecord.data as? Map<String, String>)?.let { databaseRecordMap ->
-            LookupResult.Success(mapper(databaseRecordMap))
-        } ?: LookupResult.NoRecordForIp
+            LookupResult.Success(provider, mapper(databaseRecordMap))
+        } ?: LookupResult.NoRecordForIp(provider, type)
     } catch (e: Throwable) {
         log.error(e) { "Could not retrieve record from IPLocate.io database from IP $inetAddress" }
-        LookupResult.InternalError(e)
+        LookupResult.InternalError(provider, type, e)
     }
 
 
@@ -86,7 +86,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
         if (e is FileNotFoundException) {
             LookupResult.DatabaseFileMissingAtConfiguredPath(provider, type, getPathForType(type))
         } else {
-            LookupResult.InternalError(e)
+            LookupResult.InternalError(provider, type, e)
         }
     }
 

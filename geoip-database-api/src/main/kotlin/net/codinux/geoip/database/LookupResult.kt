@@ -3,19 +3,19 @@ package net.codinux.geoip.database
 import java.nio.file.Path
 
 sealed interface LookupResult<out T> {
-    data class Success<T>(val value: T) : LookupResult<T>
+    data class Success<T>(val provider: DatabaseProvider?, val value: T) : LookupResult<T>
 
-    object UnsupportedLookup: LookupResult<Nothing>
+    class UnsupportedLookup(val provider: DatabaseProvider, val type: DatabaseType): LookupResult<Nothing>
 
     class UnconfiguredDatabasePath(val provider: DatabaseProvider, val type: DatabaseType): LookupResult<Nothing>
 
     class DatabaseFileMissingAtConfiguredPath(val provider: DatabaseProvider, val type: DatabaseType, val path: Path): LookupResult<Nothing>
 
-    object InvalidIp : LookupResult<Nothing>
+    class InvalidIp(val provider: DatabaseProvider?, val type: DatabaseType?) : LookupResult<Nothing>
 
-    object NoRecordForIp : LookupResult<Nothing>
+    class NoRecordForIp(val provider: DatabaseProvider, val type: DatabaseType) : LookupResult<Nothing>
 
-    data class InternalError(val cause: Throwable? = null) : LookupResult<Nothing>
+    data class InternalError(val provider: DatabaseProvider, val type: DatabaseType, val cause: Throwable? = null) : LookupResult<Nothing>
 
 
     val valueOrNull: T?

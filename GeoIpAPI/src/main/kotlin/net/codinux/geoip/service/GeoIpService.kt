@@ -69,9 +69,9 @@ class GeoIpService(
         val ip = ipMapper.toInetAddressOrNull(ipAddress)
 
         return if (ip != null) {
-            LookupResult.Success(mapper(ip))
+            LookupResult.Success(null, mapper(ip))
         } else {
-            LookupResult.InvalidIp
+            LookupResult.InvalidIp(null, null)
         }
     }
 

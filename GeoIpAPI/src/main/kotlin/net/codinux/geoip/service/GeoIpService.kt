@@ -15,8 +15,10 @@ import net.codinux.geoip.database.LocalGeoIpDatabase
 import net.codinux.geoip.database.LookupResult
 import net.codinux.geoip.database.geolite2.GeoLite2LocalMaxMindGeoIpDatabase
 import net.codinux.geoip.database.iplocate.IPLocateLocalMaxMindGeoIpDatabase
+import net.codinux.geoip.database.mapper.IpAddressMapper
 import net.codinux.geoip.event.ProviderDatabasesDownloadResultEvent
 import net.codinux.log.logger
+import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicReference
 
 @Singleton
@@ -33,6 +35,8 @@ class GeoIpService(
 
     private fun ipLocate(): IPLocateLocalMaxMindGeoIpDatabase = ipLocateDatabase.get()
 
+    private val ipMapper = IpAddressMapper()
+
     private val log by logger()
 
 
@@ -47,17 +51,29 @@ class GeoIpService(
         ipLocate().lookupAsn(ipAddress)
             .ifNotSuccessful { geoLite2().lookupAsn(ipAddress) }
 
-    fun lookupAll(ipAddress: String) = AllGeoIpDatabaseResponses(
-        ipLocate = GeoIpDatabaseResponses(ipLocate().lookupAsn(ipAddress).valueOrNull, ipLocate().lookupCountry(ipAddress).valueOrNull, null),
-        geoLite2 = GeoIpDatabaseResponses(geoLite2().lookupAsn(ipAddress).valueOrNull,
-            geoLite2().lookupCountry(ipAddress).valueOrNull, geoLite2().lookupCity(ipAddress).valueOrNull)
-    )
+    fun lookupAll(ipAddress: String) = mapIp(ipAddress) { ip ->
+        AllGeoIpDatabaseResponses(
+            ipLocate = GeoIpDatabaseResponses(ipLocate().lookupAsn(ip).valueOrNull, ipLocate().lookupCountry(ip).valueOrNull, null),
+            geoLite2 = GeoIpDatabaseResponses(geoLite2().lookupAsn(ip).valueOrNull,
+                geoLite2().lookupCountry(ip).valueOrNull, geoLite2().lookupCity(ip).valueOrNull)
+        )
+    }.valueOrNull
 
     fun lookupBest(ipAddress: String) = GeoIpDatabaseResponses(
         lookupAsn(ipAddress).valueOrNull,
         lookupCountry(ipAddress).valueOrNull,
         lookupCity(ipAddress).valueOrNull
     )
+
+    private fun <T> mapIp(ipAddress: String, mapper: (ip: InetAddress) -> T): LookupResult<T> {
+        val ip = ipMapper.toInetAddressOrNull(ipAddress)
+
+        return if (ip != null) {
+            LookupResult.Success(mapper(ip))
+        } else {
+            LookupResult.InvalidIp
+        }
+    }
 
 
     fun <T> withCallerIp(request: HttpServerRequest, action: (callerIp: String) -> T) =

@@ -7,6 +7,7 @@ import com.maxmind.geoip2.model.CountryResponse
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
+import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.LocalGeoIpDatabase
 import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
@@ -37,17 +38,17 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    override fun lookupCountry(ip: InetAddress): LookupResult<GeoLite2Country> = nonNullReader(this::countryReader, "Country") { countryReader ->
+    override fun lookupCountry(ip: InetAddress): LookupResult<GeoLite2Country> = nonNullReader(this::countryReader, DatabaseType.Country) { countryReader ->
         countryReader.tryCountry(ip)
             .map { mapCountry(it) }
     }
 
-    override fun lookupCity(ip: InetAddress): LookupResult<City> = nonNullReader(this::cityReader, "City") { cityReader ->
+    override fun lookupCity(ip: InetAddress): LookupResult<City> = nonNullReader(this::cityReader, DatabaseType.City) { cityReader ->
         cityReader.tryCity(ip)
             .map { mapCity(it) }
     }
 
-    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(this::asnReader, "ASN") { asnReader ->
+    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(this::asnReader, DatabaseType.ASN) { asnReader ->
         asnReader.tryAsn(ip)
             .map { mapAutonomousSystem(it) }
     }
@@ -111,7 +112,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     )
 
 
-    protected inline fun <T> nonNullReader(readerProperty: KProperty0<DatabaseReader?>, type: String, block: (DatabaseReader) -> Optional<T>): LookupResult<T> = try {
+    protected inline fun <T> nonNullReader(readerProperty: KProperty0<DatabaseReader?>, type: DatabaseType, block: (DatabaseReader) -> Optional<T>): LookupResult<T> = try {
         val reader =  readerProperty.get()
         if (reader != null) {
             val optionalResult = block(reader)
@@ -119,11 +120,13 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
             optionalResult.map { LookupResult.Success(it) }
                 .getOrNull() ?: LookupResult.NoRecordForIp
         } else {
+            // TODO: log only once per period, e.g. only once per 5 min
             log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
                     "Please pass the path to MaxMind GeoLite2 $type database file to constructor." }
             LookupResult.InternalError() // TODO: add extra type for it
         }
     } catch (e: Throwable) {
+        // TODO: log only once per period, e.g. only once per 5 min
         log.error(e) { "Could not get database reader for $type" }
         LookupResult.InternalError(e)
     }

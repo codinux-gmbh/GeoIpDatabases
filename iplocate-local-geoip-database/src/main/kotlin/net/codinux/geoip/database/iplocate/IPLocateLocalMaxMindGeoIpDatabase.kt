@@ -5,6 +5,7 @@ import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
+import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.LocalGeoIpDatabase
 import net.codinux.geoip.database.LookupResult
 import net.codinux.geoip.database.mapper.IpAddressMapper
@@ -27,7 +28,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    override fun lookupCountry(ip: InetAddress): LookupResult<Country> = nonNullReader(this::countryReader, "Country") { countryReader ->
+    override fun lookupCountry(ip: InetAddress): LookupResult<Country> = nonNullReader(this::countryReader, DatabaseType.Country) { countryReader ->
         readRecord(ip, countryReader) { countryRecordMap ->
             Country(
                 isoCode = countryRecordMap["country_code"]!!,
@@ -39,7 +40,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
 
     override fun lookupCity(ip: InetAddress): LookupResult<City> = LookupResult.UnsupportedLookup
 
-    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(this::asnReader, "ASN") { asnReader ->
+    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(this::asnReader, DatabaseType.ASN) { asnReader ->
         readRecord(ip, asnReader) { asnRecordMap ->
             AutonomousSystem(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
@@ -66,16 +67,18 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     }
 
 
-    protected inline fun <T> nonNullReader(readerProperty: KProperty0<Reader?>, type: String, block: (Reader) -> LookupResult<T>): LookupResult<T> = try {
+    protected inline fun <T> nonNullReader(readerProperty: KProperty0<Reader?>, type: DatabaseType, block: (Reader) -> LookupResult<T>): LookupResult<T> = try {
         val reader = readerProperty.get()
         if (reader != null) {
             block(reader)
         } else {
+            // TODO: log only once per period, e.g. only once per 5 min
             log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
                     "Please pass the path to IPLocate.io $type database file to constructor." }
             LookupResult.InternalError() // TODO: add extra type for it
         }
     } catch (e: Throwable) {
+        // TODO: log only once per period, e.g. only once per 5 min
         log.error(e) { "Could not get database reader for $type" }
         LookupResult.InternalError(e)
     }

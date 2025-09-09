@@ -31,21 +31,21 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    open fun lookupCountry(ipString: String): GeoLite2Country? = nonNullReader(countryReader, "Country") { countryReader ->
+    override fun lookupCountry(ipString: String): GeoLite2Country? = nonNullReader(countryReader, "Country") { countryReader ->
         val inetAddress = InetAddress.getByName(ipString)
 
         countryReader.tryCountry(inetAddress)
             .map { mapCountry(it) }.orElse(null)
     }
 
-    open fun lookupCity(ipString: String): City? = nonNullReader(cityReader, "City") { cityReader ->
+    override fun lookupCity(ipString: String): City? = nonNullReader(cityReader, "City") { cityReader ->
         val inetAddress = InetAddress.getByName(ipString)
 
         cityReader.tryCity(inetAddress)
             .map { mapCity(it) }.orElse(null)
     }
 
-    open fun lookupAsn(ipString: String): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
+    override fun lookupAsn(ipString: String): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
         val inetAddress = InetAddress.getByName(ipString)
 
         asnReader.tryAsn(inetAddress)

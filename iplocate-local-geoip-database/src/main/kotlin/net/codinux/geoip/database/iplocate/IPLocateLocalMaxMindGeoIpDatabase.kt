@@ -2,6 +2,7 @@ package net.codinux.geoip.database.iplocate
 
 import com.maxmind.db.Reader
 import net.codinux.geoip.database.AutonomousSystem
+import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.LocalGeoIpDatabase
@@ -22,7 +23,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    fun lookupCountry(ipString: String): Country? = nonNullReader(countryReader, "Country") { countryReader ->
+    override fun lookupCountry(ipString: String): Country? = nonNullReader(countryReader, "Country") { countryReader ->
         readRecord(ipString, countryReader) { countryRecordMap ->
             Country(
                 isoCode = countryRecordMap["country_code"]!!,
@@ -32,7 +33,9 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
         }
     }
 
-    fun lookupAsn(ipString: String): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
+    override fun lookupCity(ipString: String): City? = null
+
+    override fun lookupAsn(ipString: String): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
         readRecord(ipString, asnReader) { asnRecordMap ->
             AutonomousSystem(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),

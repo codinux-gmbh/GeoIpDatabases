@@ -10,4 +10,12 @@ sealed interface LookupResult<out T> {
     object NoRecordForIp : LookupResult<Nothing>
 
     data class InternalError(val cause: Throwable? = null) : LookupResult<Nothing>
+
+
+    val valueOrNull: T?
+        get() = if (this is Success) value else null
+
+    fun ifNotSuccessful(mapper: () -> LookupResult<@UnsafeVariance T>): LookupResult<T> =
+        if (this is Success) this
+        else mapper()
 }

@@ -12,6 +12,7 @@ import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.LocalGeoIpDatabase
+import net.codinux.geoip.database.LookupResult
 import net.codinux.geoip.database.geolite2.GeoLite2LocalMaxMindGeoIpDatabase
 import net.codinux.geoip.database.iplocate.IPLocateLocalMaxMindGeoIpDatabase
 import net.codinux.geoip.event.ProviderDatabasesDownloadResultEvent
@@ -35,27 +36,27 @@ class GeoIpService(
     private val log by logger()
 
 
-    fun lookupCountry(ipAddress: String): Country? =
+    fun lookupCountry(ipAddress: String): LookupResult<Country> =
         geoLite2().lookupCountry(ipAddress)
-            ?: ipLocate().lookupCountry(ipAddress)
+            .ifNotSuccessful { ipLocate().lookupCountry(ipAddress) }
 
-    fun lookupCity(ipAddress: String): City? =
+    fun lookupCity(ipAddress: String): LookupResult<City> =
         geoLite2().lookupCity(ipAddress)
 
-    fun lookupAsn(ipAddress: String): AutonomousSystem? =
+    fun lookupAsn(ipAddress: String): LookupResult<AutonomousSystem> =
         ipLocate().lookupAsn(ipAddress)
-            ?: geoLite2().lookupAsn(ipAddress)
+            .ifNotSuccessful { geoLite2().lookupAsn(ipAddress) }
 
     fun lookupAll(ipAddress: String) = AllGeoIpDatabaseResponses(
-        ipLocate = GeoIpDatabaseResponses(ipLocate().lookupAsn(ipAddress), ipLocate().lookupCountry(ipAddress), null),
-        geoLite2 = GeoIpDatabaseResponses(geoLite2().lookupAsn(ipAddress),
-            geoLite2().lookupCountry(ipAddress), geoLite2().lookupCity(ipAddress))
+        ipLocate = GeoIpDatabaseResponses(ipLocate().lookupAsn(ipAddress).valueOrNull, ipLocate().lookupCountry(ipAddress).valueOrNull, null),
+        geoLite2 = GeoIpDatabaseResponses(geoLite2().lookupAsn(ipAddress).valueOrNull,
+            geoLite2().lookupCountry(ipAddress).valueOrNull, geoLite2().lookupCity(ipAddress).valueOrNull)
     )
 
     fun lookupBest(ipAddress: String) = GeoIpDatabaseResponses(
-        lookupAsn(ipAddress),
-        lookupCountry(ipAddress),
-        lookupCity(ipAddress)
+        lookupAsn(ipAddress).valueOrNull,
+        lookupCountry(ipAddress).valueOrNull,
+        lookupCity(ipAddress).valueOrNull
     )
 
 

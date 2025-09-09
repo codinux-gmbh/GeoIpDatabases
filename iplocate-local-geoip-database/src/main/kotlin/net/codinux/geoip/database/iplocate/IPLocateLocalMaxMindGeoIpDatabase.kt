@@ -34,7 +34,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
                 continent = Continent.byCode(countryRecordMap["continent_code"]!!)!!,
             )
         }
-    } ?: LookupResult.InternalError()
+    }
 
     override fun lookupCity(ip: InetAddress): LookupResult<City> = LookupResult.UnsupportedLookup
 
@@ -49,7 +49,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
                 countryCode = asnRecordMap["country_code"]!!,
             )
         }
-    } ?: LookupResult.InternalError()
+    }
 
 
     protected open fun <T> readRecord(inetAddress: InetAddress, reader: Reader, mapper: (Map<String, String>) -> T): LookupResult<T> = try {
@@ -65,13 +65,13 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     }
 
 
-    protected inline fun <T> nonNullReader(reader: Reader?, type: String, block: (Reader) -> T): T? =
+    protected inline fun <T> nonNullReader(reader: Reader?, type: String, block: (Reader) -> LookupResult<T>): LookupResult<T> =
         if (reader != null) {
             block(reader)
         } else {
             log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
                     "Please pass the path to IPLocate.io $type database file to constructor." }
-            null
+            LookupResult.InternalError() // TODO: add extra type for it
         }
 
 

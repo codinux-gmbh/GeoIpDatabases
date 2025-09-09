@@ -17,6 +17,8 @@ import net.codinux.geoip.database.mapper.IpAddressMapper
 import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
+import java.util.Optional
+import kotlin.jvm.optionals.getOrNull
 
 open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
@@ -36,21 +38,18 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
 
     override fun lookupCountry(ip: InetAddress): LookupResult<GeoLite2Country> = nonNullReader(countryReader, "Country") { countryReader ->
         countryReader.tryCountry(ip)
-            .map { LookupResult.Success(mapCountry(it)) }
-            .orElse(null) ?: LookupResult.NoRecordForIp
-    } ?: LookupResult.InternalError()
+            .map { mapCountry(it) }
+    }
 
     override fun lookupCity(ip: InetAddress): LookupResult<City> = nonNullReader(cityReader, "City") { cityReader ->
         cityReader.tryCity(ip)
-            .map { LookupResult.Success(mapCity(it)) }
-            .orElse(null) ?: LookupResult.NoRecordForIp
-    } ?: LookupResult.InternalError()
+            .map { mapCity(it) }
+    }
 
     override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(asnReader, "ASN") { asnReader ->
         asnReader.tryAsn(ip)
-            .map { LookupResult.Success(mapAutonomousSystem(it)) }
-            .orElse(null) ?: LookupResult.NoRecordForIp
-    } ?: LookupResult.InternalError()
+            .map { mapAutonomousSystem(it) }
+    }
 
 
     protected open fun mapCountry(response: CountryResponse) =
@@ -111,13 +110,16 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     )
 
 
-    protected inline fun <T> nonNullReader(reader: DatabaseReader?, type: String, block: (DatabaseReader) -> T): T? =
+    protected inline fun <T> nonNullReader(reader: DatabaseReader?, type: String, block: (DatabaseReader) -> Optional<T>): LookupResult<T> =
         if (reader != null) {
-            block(reader)
+            val optionalResult = block(reader)
+
+            optionalResult.map { LookupResult.Success(it) }
+                .getOrNull() ?: LookupResult.NoRecordForIp
         } else {
             log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
                     "Please pass the path to MaxMind GeoLite2 $type database file to constructor." }
-            null
+            LookupResult.InternalError() // TODO: add extra type for it
         }
 
     protected open fun <T> executeSafely(action: () -> T?): T? = try {

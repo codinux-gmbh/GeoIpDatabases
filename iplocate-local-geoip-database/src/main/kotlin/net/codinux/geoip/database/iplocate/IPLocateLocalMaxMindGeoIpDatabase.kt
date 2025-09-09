@@ -6,6 +6,7 @@ import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.LocalGeoIpDatabase
+import net.codinux.geoip.database.mapper.IpAddressMapper
 import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
@@ -13,7 +14,8 @@ import java.nio.file.Path
 open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
     protected val asnDatabaseFile: Path? = null,
-) : LocalGeoIpDatabase {
+    ipMapper: IpAddressMapper = IpAddressMapper.Default,
+) : LocalGeoIpDatabase(ipMapper) {
 
     // we cannot use DatabaseReader as this one checks if it's a .mmdb file from MaxMind
     protected val countryReader by lazy { countryDatabaseFile?.let { Reader(it.toFile()) } }
@@ -23,8 +25,8 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    override fun lookupCountry(ipString: String): Country? = nonNullReader(countryReader, "Country") { countryReader ->
-        readRecord(ipString, countryReader) { countryRecordMap ->
+    override fun lookupCountry(ip: InetAddress): Country? = nonNullReader(countryReader, "Country") { countryReader ->
+        readRecord(ip, countryReader) { countryRecordMap ->
             Country(
                 isoCode = countryRecordMap["country_code"]!!,
                 name = countryRecordMap["country_name"]!!,
@@ -33,10 +35,10 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
         }
     }
 
-    override fun lookupCity(ipString: String): City? = null
+    override fun lookupCity(ip: InetAddress): City? = null
 
-    override fun lookupAsn(ipString: String): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
-        readRecord(ipString, asnReader) { asnRecordMap ->
+    override fun lookupAsn(ip: InetAddress): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
+        readRecord(ip, asnReader) { asnRecordMap ->
             AutonomousSystem(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
                 name = asnRecordMap["name"]!!,
@@ -49,9 +51,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     }
 
 
-    protected open fun <T> readRecord(ipString: String, reader: Reader, mapper: (Map<String, String>) -> T): T? = try {
-        val inetAddress = InetAddress.getByName(ipString)
-
+    protected open fun <T> readRecord(inetAddress: InetAddress, reader: Reader, mapper: (Map<String, String>) -> T): T? = try {
         val databaseRecord = reader.getRecord(inetAddress, Map::class.java)
 
         @Suppress("UNCHECKED_CAST")
@@ -59,7 +59,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
             mapper(databaseRecordMap)
         }
     } catch (e: Throwable) {
-        log.error(e) { "Could not retrieve record from IPLocate.io database from IP $ipString" }
+        log.error(e) { "Could not retrieve record from IPLocate.io database from IP $inetAddress" }
         null
     }
 

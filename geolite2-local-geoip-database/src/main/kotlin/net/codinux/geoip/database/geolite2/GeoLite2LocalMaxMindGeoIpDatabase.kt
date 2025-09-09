@@ -12,6 +12,7 @@ import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
 import net.codinux.geoip.database.Location
 import net.codinux.geoip.database.Subdivision
+import net.codinux.geoip.database.mapper.IpAddressMapper
 import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
@@ -20,7 +21,8 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
     protected val asnDatabaseFile: Path? = null,
     protected val cityDatabaseFile: Path? = null,
-) : LocalGeoIpDatabase {
+    ipMapper: IpAddressMapper = IpAddressMapper.Default,
+) : LocalGeoIpDatabase(ipMapper) {
 
     protected val countryReader by lazy { countryDatabaseFile?.let { DatabaseReader.Builder(it.toFile()).build() } }
 
@@ -31,25 +33,19 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    override fun lookupCountry(ipString: String): GeoLite2Country? = nonNullReader(countryReader, "Country") { countryReader ->
-        val inetAddress = InetAddress.getByName(ipString)
-
-        countryReader.tryCountry(inetAddress)
+    override fun lookupCountry(ip: InetAddress): GeoLite2Country? = nonNullReader(countryReader, "Country") { countryReader ->
+        countryReader.tryCountry(ip)
             .map { mapCountry(it) }.orElse(null)
     }
 
-    override fun lookupCity(ipString: String): City? = nonNullReader(cityReader, "City") { cityReader ->
-        val inetAddress = InetAddress.getByName(ipString)
-
-        cityReader.tryCity(inetAddress)
+    override fun lookupCity(ip: InetAddress): City? = nonNullReader(cityReader, "City") { cityReader ->
+        cityReader.tryCity(ip)
             .map { mapCity(it) }.orElse(null)
     }
 
-    override fun lookupAsn(ipString: String): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
-        val inetAddress = InetAddress.getByName(ipString)
-
-        asnReader.tryAsn(inetAddress)
-            .map { mapAutonomousSystem(inetAddress, it) }.orElse(null)
+    override fun lookupAsn(ip: InetAddress): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
+        asnReader.tryAsn(ip)
+            .map { mapAutonomousSystem(it) }.orElse(null)
     }
 
 
@@ -105,7 +101,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         }
 
 
-    protected open fun mapAutonomousSystem(inetAddress: InetAddress, response: AsnResponse) = AutonomousSystem(
+    protected open fun mapAutonomousSystem(response: AsnResponse) = AutonomousSystem(
         autonomousSystemNumber = response.autonomousSystemNumber,
         name = response.autonomousSystemOrganization,
     )
@@ -119,6 +115,13 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
                     "Please pass the path to MaxMind GeoLite2 $type database file to constructor." }
             null
         }
+
+    protected open fun <T> executeSafely(action: () -> T?): T? = try {
+        action()
+    } catch (e: Throwable) {
+        log.error(e) { "Lookup failed. Is database file downloaded?" }
+        null
+    }
 
 
     override fun close() {

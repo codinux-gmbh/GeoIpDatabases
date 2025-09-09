@@ -11,6 +11,7 @@ import net.codinux.geoip.database.LocalGeoIpDatabase
 import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
 import net.codinux.geoip.database.Location
+import net.codinux.geoip.database.LookupResult
 import net.codinux.geoip.database.Subdivision
 import net.codinux.geoip.database.mapper.IpAddressMapper
 import net.codinux.log.logger
@@ -33,20 +34,23 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    override fun lookupCountry(ip: InetAddress): GeoLite2Country? = nonNullReader(countryReader, "Country") { countryReader ->
+    override fun lookupCountry(ip: InetAddress): LookupResult<GeoLite2Country> = nonNullReader(countryReader, "Country") { countryReader ->
         countryReader.tryCountry(ip)
-            .map { mapCountry(it) }.orElse(null)
-    }
+            .map { LookupResult.Success(mapCountry(it)) }
+            .orElse(null) ?: LookupResult.NoRecordForIp
+    } ?: LookupResult.InternalError()
 
-    override fun lookupCity(ip: InetAddress): City? = nonNullReader(cityReader, "City") { cityReader ->
+    override fun lookupCity(ip: InetAddress): LookupResult<City> = nonNullReader(cityReader, "City") { cityReader ->
         cityReader.tryCity(ip)
-            .map { mapCity(it) }.orElse(null)
-    }
+            .map { LookupResult.Success(mapCity(it)) }
+            .orElse(null) ?: LookupResult.NoRecordForIp
+    } ?: LookupResult.InternalError()
 
-    override fun lookupAsn(ip: InetAddress): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
+    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(asnReader, "ASN") { asnReader ->
         asnReader.tryAsn(ip)
-            .map { mapAutonomousSystem(it) }.orElse(null)
-    }
+            .map { LookupResult.Success(mapAutonomousSystem(it)) }
+            .orElse(null) ?: LookupResult.NoRecordForIp
+    } ?: LookupResult.InternalError()
 
 
     protected open fun mapCountry(response: CountryResponse) =

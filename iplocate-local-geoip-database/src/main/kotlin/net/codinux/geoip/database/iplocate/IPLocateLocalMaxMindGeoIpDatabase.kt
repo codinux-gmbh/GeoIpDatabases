@@ -6,6 +6,7 @@ import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.LocalGeoIpDatabase
+import net.codinux.geoip.database.LookupResult
 import net.codinux.geoip.database.mapper.IpAddressMapper
 import net.codinux.log.logger
 import java.net.InetAddress
@@ -25,7 +26,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    override fun lookupCountry(ip: InetAddress): Country? = nonNullReader(countryReader, "Country") { countryReader ->
+    override fun lookupCountry(ip: InetAddress): LookupResult<Country> = nonNullReader(countryReader, "Country") { countryReader ->
         readRecord(ip, countryReader) { countryRecordMap ->
             Country(
                 isoCode = countryRecordMap["country_code"]!!,
@@ -33,11 +34,11 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
                 continent = Continent.byCode(countryRecordMap["continent_code"]!!)!!,
             )
         }
-    }
+    } ?: LookupResult.InternalError()
 
-    override fun lookupCity(ip: InetAddress): City? = null
+    override fun lookupCity(ip: InetAddress): LookupResult<City> = LookupResult.UnsupportedLookup
 
-    override fun lookupAsn(ip: InetAddress): AutonomousSystem? = nonNullReader(asnReader, "ASN") { asnReader ->
+    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(asnReader, "ASN") { asnReader ->
         readRecord(ip, asnReader) { asnRecordMap ->
             AutonomousSystem(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
@@ -48,19 +49,19 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
                 countryCode = asnRecordMap["country_code"]!!,
             )
         }
-    }
+    } ?: LookupResult.InternalError()
 
 
-    protected open fun <T> readRecord(inetAddress: InetAddress, reader: Reader, mapper: (Map<String, String>) -> T): T? = try {
+    protected open fun <T> readRecord(inetAddress: InetAddress, reader: Reader, mapper: (Map<String, String>) -> T): LookupResult<T> = try {
         val databaseRecord = reader.getRecord(inetAddress, Map::class.java)
 
         @Suppress("UNCHECKED_CAST")
         (databaseRecord.data as? Map<String, String>)?.let { databaseRecordMap ->
-            mapper(databaseRecordMap)
-        }
+            LookupResult.Success(mapper(databaseRecordMap))
+        } ?: LookupResult.NoRecordForIp
     } catch (e: Throwable) {
         log.error(e) { "Could not retrieve record from IPLocate.io database from IP $inetAddress" }
-        null
+        LookupResult.InternalError(e)
     }
 
 

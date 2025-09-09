@@ -8,24 +8,24 @@ abstract class LocalGeoIpDatabase(
     protected val ipMapper: IpAddressMapper = IpAddressMapper.Default
 ) : Closeable {
 
-    open fun lookupAsn(ipString: String): AutonomousSystem? = ipMapper.toInetAddressOrNull(ipString)?.let { ip ->
+    open fun lookupAsn(ipString: String) = ipMapper.toInetAddressOrNull(ipString)?.let { ip ->
         lookupAsn(ip)
-    }
+    } ?: LookupResult.InvalidIp
 
-    abstract fun lookupAsn(ip: InetAddress): AutonomousSystem?
+    abstract fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem>
 
 
-    open fun lookupCountry(ipString: String): Country? = ipMapper.toInetAddressOrNull(ipString)?.let { ip ->
+    open fun lookupCountry(ipString: String) = ipMapper.toInetAddressOrNull(ipString)?.let { ip ->
         lookupCountry(ip)
-    }
+    } ?: LookupResult.InvalidIp
 
-    abstract fun lookupCountry(ip: InetAddress): Country?
+    abstract fun lookupCountry(ip: InetAddress): LookupResult<Country>
 
 
-    open fun lookupCity(ipString: String): City? = ipMapper.toInetAddressOrNull(ipString)?.let { ip ->
+    open fun lookupCity(ipString: String) = ipMapper.toInetAddressOrNull(ipString)?.let { ip ->
         lookupCity(ip)
-    }
+    } ?: LookupResult.InvalidIp
 
-    abstract fun lookupCity(ip: InetAddress): City?
+    abstract fun lookupCity(ip: InetAddress): LookupResult<City>
 
 }

@@ -2,7 +2,9 @@ package net.codinux.geoip.database.geolite2
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
+import net.codinux.geoip.database.LookupResult
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.test.Test
@@ -20,10 +22,10 @@ class GeoLite2LocalMaxMindGeoIpDatabaseTest {
     fun lookupCountry() {
         val result = underTest.lookupCountry("1.0.0.0")
 
-        assertThat(result).isNotNull()
-        assertThat(result!!::name).isEqualTo("Australia")
-        assertThat(result::isoCode).isEqualTo("AU")
-//        assertThat(result::continentCode).isEqualTo("OC")
+        val country = assertSuccess(result)
+        assertThat(country::name).isEqualTo("Australia")
+        assertThat(country::isoCode).isEqualTo("AU")
+//        assertThat(country::continentCode).isEqualTo("OC")
     }
 
 
@@ -31,10 +33,10 @@ class GeoLite2LocalMaxMindGeoIpDatabaseTest {
     fun lookupCity() {
         val result = underTest.lookupCity("1.0.0.0")
 
-        assertThat(result).isNotNull()
-        assertThat(result!!.country::name).isEqualTo("Australia")
-        assertThat(result.country::isoCode).isEqualTo("AU")
-//        assertThat(result::continentCode).isEqualTo("OC")
+        val city = assertSuccess(result)
+        assertThat(city.country::name).isEqualTo("Australia")
+        assertThat(city.country::isoCode).isEqualTo("AU")
+//        assertThat(city::continentCode).isEqualTo("OC")
     }
 
 
@@ -42,11 +44,17 @@ class GeoLite2LocalMaxMindGeoIpDatabaseTest {
     fun lookupAsn() {
         val result = underTest.lookupAsn("1.0.0.0")
 
-        assertThat(result).isNotNull()
-        assertThat(result!!::autonomousSystemNumber).isEqualTo(13335)
-        assertThat(result::name).isEqualTo("CLOUDFLARENET")
+        val autonomousSystem = assertSuccess(result)
+        assertThat(autonomousSystem::autonomousSystemNumber).isEqualTo(13335)
+        assertThat(autonomousSystem::name).isEqualTo("CLOUDFLARENET")
     }
 
+
+    private fun <T> assertSuccess(result: LookupResult<T>): T {
+        assertThat(result).isInstanceOf<LookupResult.Success<T>>()
+
+        return (result as LookupResult.Success<T>).value
+    }
 
     private fun getResourcePath(resourceFile: String): Path {
         val url = GeoLite2LocalMaxMindGeoIpDatabaseTest::class.java.classLoader.getResource(resourceFile)!!

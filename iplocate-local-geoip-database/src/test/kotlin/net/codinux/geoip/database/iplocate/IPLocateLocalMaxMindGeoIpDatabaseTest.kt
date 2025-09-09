@@ -2,8 +2,9 @@ package net.codinux.geoip.database.iplocate
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
+import assertk.assertions.isInstanceOf
 import net.codinux.geoip.database.Continent
+import net.codinux.geoip.database.LookupResult
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.test.Test
@@ -21,25 +22,37 @@ class IPLocateLocalMaxMindGeoIpDatabaseTest {
 //        val result = underTest.lookupCountry("1.0.0.0/24")
         val result = underTest.lookupCountry("1.0.0.0")
 
-        assertThat(result).isNotNull()
-        assertThat(result!!::name).isEqualTo("Australia")
-        assertThat(result::isoCode).isEqualTo("AU")
-        assertThat(result::continent).isEqualTo(Continent.Oceania)
+        val country = assertSuccess(result)
+        assertThat(country::name).isEqualTo("Australia")
+        assertThat(country::isoCode).isEqualTo("AU")
+        assertThat(country::continent).isEqualTo(Continent.Oceania)
+    }
+
+    @Test
+    fun lookupCity() {
+        val result = underTest.lookupCity("1.0.0.0")
+
+        assertThat(result).isInstanceOf<LookupResult.UnsupportedLookup>()
     }
 
     @Test
     fun lookupAsn() {
-//        val result = underTest.lookupCountry("1.0.0.0/24")
         val result = underTest.lookupAsn("1.0.0.0")
 
-        assertThat(result).isNotNull()
-        assertThat(result!!::name).isEqualTo("CLOUDFLARENET")
-        assertThat(result::organization).isEqualTo("Cloudflare, Inc.")
-        assertThat(result::domain).isEqualTo("cloudflare.com")
-        assertThat(result::countryCode).isEqualTo("US")
-        assertThat(result::autonomousSystemNumber).isEqualTo(13335)
+        val autonomousSystem = assertSuccess(result)
+        assertThat(autonomousSystem::name).isEqualTo("CLOUDFLARENET")
+        assertThat(autonomousSystem::organization).isEqualTo("Cloudflare, Inc.")
+        assertThat(autonomousSystem::domain).isEqualTo("cloudflare.com")
+        assertThat(autonomousSystem::countryCode).isEqualTo("US")
+        assertThat(autonomousSystem::autonomousSystemNumber).isEqualTo(13335)
     }
 
+
+    private fun <T> assertSuccess(result: LookupResult<T>): T {
+        assertThat(result).isInstanceOf<LookupResult.Success<T>>()
+
+        return (result as LookupResult.Success<T>).value
+    }
 
     private fun getResourcePath(resourceFile: String): Path {
         val url = IPLocateLocalMaxMindGeoIpDatabaseTest::class.java.classLoader.getResource(resourceFile)!!

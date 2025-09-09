@@ -1,4 +1,4 @@
-package net.codinux.geoip.database
+package net.codinux.geoip.database.mapper
 
 import java.net.InetAddress
 

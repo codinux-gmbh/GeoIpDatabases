@@ -146,6 +146,8 @@ class GeoIpResource(
         is LookupResult.Success -> result.value
         is LookupResult.UnsupportedLookup -> throw ServerErrorException("This kind of lookup is not available for selected GeoIP provider (like City lookup for IPLocate.io",
             Response.Status.NOT_IMPLEMENTED) // TODO: 501 is not really fitting: "he request method is not supported by the server and cannot be handled. The only methods that servers are required to support (and therefore that must not return this code) are GET and HEAD."
+        is LookupResult.UnconfiguredDatabasePath -> throw InternalServerErrorException("For ${result.provider} ${result.type} lookup path to database has not been configured")
+        is LookupResult.DatabaseFileMissingAtConfiguredPath -> throw InternalServerErrorException("For ${result.provider} ${result.type} lookup no GeoIP database has been found at configured path '${result.path}'. Has database been downloaded?")
         is LookupResult.InvalidIp -> throw BadRequestException("Invalid IP address")
         is LookupResult.NoRecordForIp -> throw NotFoundException("No record for IP address")
         is LookupResult.InternalError -> throw InternalServerErrorException(result.cause)

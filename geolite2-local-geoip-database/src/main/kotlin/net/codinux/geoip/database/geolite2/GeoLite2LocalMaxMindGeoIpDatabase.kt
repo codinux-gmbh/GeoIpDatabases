@@ -17,6 +17,7 @@ import net.codinux.geoip.database.LookupResult
 import net.codinux.geoip.database.Subdivision
 import net.codinux.geoip.database.mapper.IpAddressMapper
 import net.codinux.log.logger
+import java.io.FileNotFoundException
 import java.net.InetAddress
 import java.nio.file.Path
 import java.util.Optional
@@ -124,12 +125,23 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
             // TODO: log only once per period, e.g. only once per 5 min
             log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
                     "Please pass the path to $provider $type database file to constructor." }
-            LookupResult.InternalError() // TODO: add extra type for it
+            LookupResult.UnconfiguredDatabasePath(provider, type)
         }
     } catch (e: Throwable) {
         // TODO: log only once per period, e.g. only once per 5 min
         log.error(e) { "Could not get database reader for $provider $type" }
-        LookupResult.InternalError(e)
+
+        if (e is FileNotFoundException) {
+            LookupResult.DatabaseFileMissingAtConfiguredPath(provider, type, getPathForType(type))
+        } else {
+            LookupResult.InternalError(e)
+        }
+    }
+
+    protected fun getPathForType(type: DatabaseType): Path = when (type) {
+        DatabaseType.ASN -> asnDatabaseFile!!
+        DatabaseType.Country -> countryDatabaseFile!!
+        DatabaseType.City -> cityDatabaseFile!!
     }
 
 

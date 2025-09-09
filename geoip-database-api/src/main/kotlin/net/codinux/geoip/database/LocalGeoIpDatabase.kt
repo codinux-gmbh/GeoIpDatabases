@@ -5,6 +5,7 @@ import java.io.Closeable
 import java.net.InetAddress
 
 abstract class LocalGeoIpDatabase(
+    protected val provider: DatabaseProvider,
     protected val ipMapper: IpAddressMapper = IpAddressMapper.Default
 ) : Closeable {
 

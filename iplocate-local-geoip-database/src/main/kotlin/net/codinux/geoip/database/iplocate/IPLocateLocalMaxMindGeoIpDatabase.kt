@@ -5,6 +5,7 @@ import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
+import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.LocalGeoIpDatabase
 import net.codinux.geoip.database.LookupResult
@@ -18,7 +19,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
     protected val asnDatabaseFile: Path? = null,
     ipMapper: IpAddressMapper = IpAddressMapper.Default,
-) : LocalGeoIpDatabase(ipMapper) {
+) : LocalGeoIpDatabase(DatabaseProvider.IPLocate, ipMapper) {
 
     // we cannot use DatabaseReader as this one checks if it's a .mmdb file from MaxMind
     protected val countryReader by lazy { countryDatabaseFile?.let { Reader(it.toFile()) } }
@@ -74,12 +75,12 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
         } else {
             // TODO: log only once per period, e.g. only once per 5 min
             log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
-                    "Please pass the path to IPLocate.io $type database file to constructor." }
+                    "Please pass the path to $provider $type database file to constructor." }
             LookupResult.InternalError() // TODO: add extra type for it
         }
     } catch (e: Throwable) {
         // TODO: log only once per period, e.g. only once per 5 min
-        log.error(e) { "Could not get database reader for $type" }
+        log.error(e) { "Could not get database reader for $provider $type" }
         LookupResult.InternalError(e)
     }
 

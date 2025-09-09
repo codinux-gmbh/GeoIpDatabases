@@ -7,6 +7,7 @@ import com.maxmind.geoip2.model.CountryResponse
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Continent
+import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.LocalGeoIpDatabase
 import net.codinux.geoip.database.geolite2.model.GeoLite2City
@@ -27,7 +28,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val asnDatabaseFile: Path? = null,
     protected val cityDatabaseFile: Path? = null,
     ipMapper: IpAddressMapper = IpAddressMapper.Default,
-) : LocalGeoIpDatabase(ipMapper) {
+) : LocalGeoIpDatabase(DatabaseProvider.GeoLite2, ipMapper) {
 
     protected val countryReader by lazy { countryDatabaseFile?.let { DatabaseReader.Builder(it.toFile()).build() } }
 
@@ -122,12 +123,12 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         } else {
             // TODO: log only once per period, e.g. only once per 5 min
             log.warn { "You are trying to lookup $type from IP, but have not supplied a database file for it. " +
-                    "Please pass the path to MaxMind GeoLite2 $type database file to constructor." }
+                    "Please pass the path to $provider $type database file to constructor." }
             LookupResult.InternalError() // TODO: add extra type for it
         }
     } catch (e: Throwable) {
         // TODO: log only once per period, e.g. only once per 5 min
-        log.error(e) { "Could not get database reader for $type" }
+        log.error(e) { "Could not get database reader for $provider $type" }
         LookupResult.InternalError(e)
     }
 

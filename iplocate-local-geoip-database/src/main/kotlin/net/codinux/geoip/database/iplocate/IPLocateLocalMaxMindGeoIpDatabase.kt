@@ -11,6 +11,7 @@ import net.codinux.geoip.database.mapper.IpAddressMapper
 import net.codinux.log.logger
 import java.net.InetAddress
 import java.nio.file.Path
+import kotlin.reflect.KProperty0
 
 open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
@@ -26,7 +27,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    override fun lookupCountry(ip: InetAddress): LookupResult<Country> = nonNullReader(countryReader, "Country") { countryReader ->
+    override fun lookupCountry(ip: InetAddress): LookupResult<Country> = nonNullReader(this::countryReader, "Country") { countryReader ->
         readRecord(ip, countryReader) { countryRecordMap ->
             Country(
                 isoCode = countryRecordMap["country_code"]!!,
@@ -38,7 +39,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
 
     override fun lookupCity(ip: InetAddress): LookupResult<City> = LookupResult.UnsupportedLookup
 
-    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(asnReader, "ASN") { asnReader ->
+    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(this::asnReader, "ASN") { asnReader ->
         readRecord(ip, asnReader) { asnRecordMap ->
             AutonomousSystem(
                 autonomousSystemNumber = asnRecordMap["asn"]!!.toLong(),
@@ -65,7 +66,8 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
     }
 
 
-    protected inline fun <T> nonNullReader(reader: Reader?, type: String, block: (Reader) -> LookupResult<T>): LookupResult<T> =
+    protected inline fun <T> nonNullReader(readerProperty: KProperty0<Reader?>, type: String, block: (Reader) -> LookupResult<T>): LookupResult<T> = try {
+        val reader = readerProperty.get()
         if (reader != null) {
             block(reader)
         } else {
@@ -73,6 +75,10 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
                     "Please pass the path to IPLocate.io $type database file to constructor." }
             LookupResult.InternalError() // TODO: add extra type for it
         }
+    } catch (e: Throwable) {
+        log.error(e) { "Could not get database reader for $type" }
+        LookupResult.InternalError(e)
+    }
 
 
     override fun close() {

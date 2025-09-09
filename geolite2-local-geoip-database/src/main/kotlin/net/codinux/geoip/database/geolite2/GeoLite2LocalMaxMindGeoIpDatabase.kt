@@ -19,6 +19,7 @@ import java.net.InetAddress
 import java.nio.file.Path
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
+import kotlin.reflect.KProperty0
 
 open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val countryDatabaseFile: Path? = null,
@@ -36,17 +37,17 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     protected val log by logger()
 
 
-    override fun lookupCountry(ip: InetAddress): LookupResult<GeoLite2Country> = nonNullReader(countryReader, "Country") { countryReader ->
+    override fun lookupCountry(ip: InetAddress): LookupResult<GeoLite2Country> = nonNullReader(this::countryReader, "Country") { countryReader ->
         countryReader.tryCountry(ip)
             .map { mapCountry(it) }
     }
 
-    override fun lookupCity(ip: InetAddress): LookupResult<City> = nonNullReader(cityReader, "City") { cityReader ->
+    override fun lookupCity(ip: InetAddress): LookupResult<City> = nonNullReader(this::cityReader, "City") { cityReader ->
         cityReader.tryCity(ip)
             .map { mapCity(it) }
     }
 
-    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(asnReader, "ASN") { asnReader ->
+    override fun lookupAsn(ip: InetAddress): LookupResult<AutonomousSystem> = nonNullReader(this::asnReader, "ASN") { asnReader ->
         asnReader.tryAsn(ip)
             .map { mapAutonomousSystem(it) }
     }
@@ -110,7 +111,8 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
     )
 
 
-    protected inline fun <T> nonNullReader(reader: DatabaseReader?, type: String, block: (DatabaseReader) -> Optional<T>): LookupResult<T> =
+    protected inline fun <T> nonNullReader(readerProperty: KProperty0<DatabaseReader?>, type: String, block: (DatabaseReader) -> Optional<T>): LookupResult<T> = try {
+        val reader =  readerProperty.get()
         if (reader != null) {
             val optionalResult = block(reader)
 
@@ -121,12 +123,9 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
                     "Please pass the path to MaxMind GeoLite2 $type database file to constructor." }
             LookupResult.InternalError() // TODO: add extra type for it
         }
-
-    protected open fun <T> executeSafely(action: () -> T?): T? = try {
-        action()
     } catch (e: Throwable) {
-        log.error(e) { "Lookup failed. Is database file downloaded?" }
-        null
+        log.error(e) { "Could not get database reader for $type" }
+        LookupResult.InternalError(e)
     }
 
 

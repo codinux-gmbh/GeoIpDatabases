@@ -19,9 +19,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.io.path.exists
-import kotlin.io.path.fileSize
-import kotlin.io.path.isRegularFile
 
 @Readiness
 @Singleton
@@ -34,16 +31,16 @@ class DatabaseFilesDownloadedReadinessHealthCheck(
     }
 
 
-    private val allDatabaseFilesAvailable = AtomicBoolean(false)
+    private val allDatabaseFilesTriedToDownload = AtomicBoolean(false)
 
     private val fileDownloadStatus = ConcurrentHashMap<String, String>()
 
 
     override fun call(): HealthCheckResponse {
-        var builder = if (allDatabaseFilesAvailable.get()) {
-            HealthCheckResponse.named("All requested GeoIP databases have been downloaded successfully.").up()
+        var builder = if (allDatabaseFilesTriedToDownload.get()) {
+            HealthCheckResponse.named("All requested GeoIP databases have been downloaded successfully or at least tried once to download it.").up()
         } else {
-            HealthCheckResponse.named("Not all requested GeoIP databases have been downloaded.\nPlease check the logs for more details.").down()
+            HealthCheckResponse.named("Not all requested GeoIP databases have been tried to download.\nPlease check the logs for more details.").down()
         }
 
         fileDownloadStatus.toSortedMap().forEach { (name, value) ->
@@ -64,7 +61,7 @@ class DatabaseFilesDownloadedReadinessHealthCheck(
         val geoLite2CountryCheck = checkIsNullOrDownloaded(config.geoLite2.countryPath, DatabaseProvider.GeoLite2, DatabaseType.Country, event.filesState)
         val geoLite2CityCheck = checkIsNullOrDownloaded(config.geoLite2.cityPath, DatabaseProvider.GeoLite2, DatabaseType.City, event.filesState)
 
-        allDatabaseFilesAvailable.set(
+        allDatabaseFilesTriedToDownload.set(
             ipLocateAsnCheck && ipLocateCountryCheck &&
             geoLite2AsnCheck && geoLite2CountryCheck && geoLite2CityCheck
         )

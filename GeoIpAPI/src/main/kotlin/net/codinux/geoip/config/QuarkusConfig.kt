@@ -3,6 +3,8 @@ package net.codinux.geoip.config
 import io.quarkus.runtime.annotations.RegisterForReflection
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
+import net.codinux.geoip.database.Location
+import net.codinux.geoip.database.Subdivision
 import net.codinux.geoip.database.geolite2.model.GeoLite2City
 import net.codinux.geoip.database.geolite2.model.GeoLite2Country
 import net.codinux.geoip.service.DownloadedFilesStateService
@@ -15,6 +17,8 @@ import kotlin.jvm.optionals.getOrNull
 @Singleton
 @RegisterForReflection(registerFullHierarchy = true, targets = [
     GeoLite2City::class, GeoLite2Country::class,
+    // i don't know why, even though City is registered for reflection, it misses Location and Subdivision
+    Location::class, Subdivision::class,
 
     GeoIpProvidersDatabaseFileState::class,
 ], classNames = [

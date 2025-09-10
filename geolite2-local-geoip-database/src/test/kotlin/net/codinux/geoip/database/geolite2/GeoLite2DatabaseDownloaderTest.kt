@@ -86,7 +86,7 @@ class GeoLite2DatabaseDownloaderTest {
 
         val result = underTest.downloadIfNewer(FileModifiedInformation(MinBuildTime), filename, type, DatabaseFormat.MaxMindGeoIP)
 
-        assertThat(result).isTrue()
+        assertThat(result.first).isTrue()
         assertThat(filename.fileSize()).isGreaterThanOrEqualTo(minExpectedSize)
     }
 
@@ -111,7 +111,7 @@ class GeoLite2DatabaseDownloaderTest {
 
         val result = underTest.downloadIfNewer(FileModifiedInformation(MinBuildTime), destination, type, DatabaseFormat.CSV)
 
-        assertThat(result).isTrue()
+        assertThat(result.first).isTrue()
         assertThat(destination.resolve("GeoLite2-$type-Blocks-IPv4.csv").fileSize()).isGreaterThanOrEqualTo(ipv4MinExpectedSize)
         assertThat(destination.resolve("GeoLite2-$type-Blocks-IPv6.csv").fileSize()).isGreaterThanOrEqualTo(ipv6MinExpectedSize)
     }

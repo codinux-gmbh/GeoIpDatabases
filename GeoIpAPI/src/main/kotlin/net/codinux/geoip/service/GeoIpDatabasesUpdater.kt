@@ -129,18 +129,19 @@ class GeoIpDatabasesUpdater(
         val (hasNewer, result) = downloader.downloadIfNewer(state.toModificationInfo(), tempFile(state.downloadPath!!), state.type, state.format)
         val success = result != null && result.successful
         if (success) {
-            // TODO: too early? wait till files have been swapped out?
-            state.update(result.downloadedFile!!)
+            val downloadedFile = result.downloadedFile!!
+            // TODO: too early? wait till temp file has been moved into place?
+            state.update(downloadedFile)
 
-            log.info { "Downloaded ${state.provider} ${state.type} database to ${state.downloadPath}" }
-        } else if (hasNewer) {
+            log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.bytes.size} bytes to ${state.downloadPath}" }
+        } else if (hasNewer) { // error is logged in downloadAsync() and downloadToAsync()
             state.updateDownloadFailed(result?.error)
         } else {
             log.info { "Checked ${state.provider} ${state.type} database file but no newer file available" }
         }
 
         updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type,
-            DatabaseFormat.MaxMindGeoIP, success, this@GeoIpDatabasesUpdater.state))
+            state.format, success, this@GeoIpDatabasesUpdater.state))
 
         result
     }
@@ -195,18 +196,23 @@ class GeoIpDatabasesUpdater(
     }
 
     private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, state: GeoIpDatabaseFileState) = async {
+        // save file to temp file and after all databases have been downloaded move them atomically in place
         val (hasNewer, result) = downloader.downloadIfNewer(state.toModificationInfo(), tempFile(state.downloadPath!!), state.type, state.format)
         val success = result != null && result.successful
         if (success) {
-            state.update(result.downloadedFile!!)
-            log.info { "Downloaded ${state.provider} ${state.type} database to ${state.downloadPath}" }
-        } else if (hasNewer) {
+            val downloadedFile = result.downloadedFile!!
+            // TODO: too early? wait till temp file has been moved into place?
+            state.update(downloadedFile)
+
+            log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.bytes.size} bytes to ${state.downloadPath}" }
+        } else if (hasNewer) { // error is logged in downloadAsync() and downloadToAsync()
             state.updateDownloadFailed(result?.errors?.firstOrNull())
         } else {
             log.info { "Checked ${state.provider} ${state.type} database file but no newer file available" }
         }
 
-        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type, state.format, success, this@GeoIpDatabasesUpdater.state))
+        updateAttemptEvent.fire(DatabaseFileUpdateAttemptEvent(state.provider, state.type,
+            state.format, success, this@GeoIpDatabasesUpdater.state))
 
         result
     }

@@ -61,8 +61,6 @@ open class Downloader(
         if (response.successfulAndBodySet) {
             val bytes = response.body!!
 
-            log.debug { "Downloaded ${bytes.size} bytes for $databaseProvider database '$url'" }
-
             val details = response.responseDetails!!
             DownloadFileResult.success(DownloadedFile(url, bytes, getFilename(url, details), details.contentType!!,
                 details.contentLength, details.getHeaderValue("Last-Modified")?.let { parseRfc1123DateTime(it) }, details.getHeaderValue("ETag")))

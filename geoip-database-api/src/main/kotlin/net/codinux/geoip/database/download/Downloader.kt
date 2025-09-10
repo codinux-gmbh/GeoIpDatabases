@@ -67,7 +67,7 @@ open class Downloader(
             DownloadFileResult.success(DownloadedFile(url, bytes, getFilename(url, details), details.contentType!!,
                 details.contentLength, details.getHeaderValue("Last-Modified")?.let { parseRfc1123DateTime(it) }, details.getHeaderValue("ETag")))
         } else {
-            log.warn(response.error) { "Downloading $databaseProvider database '$url' failed: ${response.statusCode} ${response.error}" }
+            log.error(response.error) { "Downloading $databaseProvider database '$url' failed: ${response.statusCode} ${response.error}" }
             DownloadFileResult.error(response.error)
         }
     } catch (e: Throwable) {

@@ -41,19 +41,19 @@ open class Downloader(
     protected open suspend fun downloadToAsync(downloadUrl: String, downloadTo: Path): DownloadAndSaveFileResult = try {
         val downloadResult = downloadAsync(downloadUrl)
         if (downloadResult.downloadedFile == null) {
-            DownloadAndSaveFileResult.error(downloadResult.error)
+            DownloadAndSaveFileResult.error(downloadUrl, downloadResult.error)
         } else {
             try {
                 val successful = saveToFile(downloadTo, downloadResult.downloadedFile.bytes)
 
-                DownloadAndSaveFileResult.downloadSuccess(successful, downloadResult.downloadedFile, downloadTo)
+                DownloadAndSaveFileResult.downloadSuccess(successful, downloadUrl, downloadResult.downloadedFile, downloadTo)
             } catch (e: Throwable) {
-                DownloadAndSaveFileResult.savingFileError(e, downloadResult.downloadedFile, downloadTo)
+                DownloadAndSaveFileResult.savingFileError(e, downloadUrl, downloadResult.downloadedFile, downloadTo)
             }
         }
     } catch (e: Throwable) {
         log.error(e) { "Could not write downloaded $databaseProvider database to file '$downloadTo'" }
-        DownloadAndSaveFileResult.error(e)
+        DownloadAndSaveFileResult.error(downloadUrl, e)
     }
 
     protected open suspend fun downloadAsync(url: String): DownloadFileResult = try {

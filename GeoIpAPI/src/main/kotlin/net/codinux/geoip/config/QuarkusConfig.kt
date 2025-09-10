@@ -33,7 +33,7 @@ class QuarkusConfig {
         val dataFolder = Path(quarkusConfig.dataFolder())
 
         return GeoIpConfig(
-            dataFolder.resolve("DownloadedFilesState.json"),
+            dataFolder.resolve("GeoIpDownloadState.json"),
             IPLocateConfig(path(dataFolder, quarkusConfig.ipLocate().asn()), path(dataFolder, quarkusConfig.ipLocate().country())),
             GeoLite2Config(quarkusConfig.geoLite2().accountId().getOrNull(), quarkusConfig.geoLite2().licenseKey().getOrNull(),
                 path(dataFolder, quarkusConfig.geoLite2().asn()), path(dataFolder, quarkusConfig.geoLite2().country()),

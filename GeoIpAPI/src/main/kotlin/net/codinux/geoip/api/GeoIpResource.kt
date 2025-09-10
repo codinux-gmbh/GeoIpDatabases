@@ -115,7 +115,7 @@ class GeoIpResource(
     @Operation(summary = "Lookup all available geo information from all GeoIP database providers for the IP address of the caller")
     fun lookupAllGeoIpInformationForCaller(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
-            service.lookupAll(it)
+            lookupAllGeoIpInformation(it)
         }
 
     @GET
@@ -131,7 +131,7 @@ class GeoIpResource(
             "type like City from GeoLite2 and Autonomous System from IPLocate for the IP address of the caller")
     fun lookupBestGeoIpInformationForCaller(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
-            service.lookupBest(it)
+            lookupBestGeoIpInformation(it)
         }
 
     @GET

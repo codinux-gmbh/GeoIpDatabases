@@ -11,7 +11,7 @@ import net.codinux.geoip.service.model.GeoIpDatabaseFileState
 import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
 import org.eclipse.microprofile.health.HealthCheck
 import org.eclipse.microprofile.health.HealthCheckResponse
-import org.eclipse.microprofile.health.Readiness
+import org.eclipse.microprofile.health.Startup
 import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneId
@@ -20,9 +20,9 @@ import java.time.format.FormatStyle
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-@Readiness
+@Startup
 @Singleton
-class DatabaseFilesDownloadedReadinessHealthCheck(
+class DatabaseFilesDownloadedStartupHealthCheck(
     private val config: GeoIpConfig,
 ) : HealthCheck {
 

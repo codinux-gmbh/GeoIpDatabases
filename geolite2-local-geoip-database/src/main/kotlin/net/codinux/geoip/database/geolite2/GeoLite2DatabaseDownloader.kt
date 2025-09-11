@@ -54,9 +54,6 @@ open class GeoLite2DatabaseDownloader(
     }
 
 
-    suspend fun isDatabaseNewerThan(currentModificationInfo: FileModifiedInformation, type: DatabaseType, format: DatabaseFormat): Boolean? =
-        isDatabaseNewerThan(currentModificationInfo, getPermalink(type, format))
-
     suspend fun getFileModificationInfo(type: DatabaseType, format: DatabaseFormat): FileModifiedInformation =
         getFileModificationInfo(getPermalink(type, format))
 

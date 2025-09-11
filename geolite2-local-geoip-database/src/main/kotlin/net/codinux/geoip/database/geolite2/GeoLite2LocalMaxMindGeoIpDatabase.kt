@@ -138,7 +138,7 @@ open class GeoLite2LocalMaxMindGeoIpDatabase(
         }
     }
 
-    protected fun getPathForType(type: DatabaseType): Path = when (type) {
+    protected open fun getPathForType(type: DatabaseType): Path = when (type) {
         DatabaseType.ASN -> asnDatabaseFile!!
         DatabaseType.Country -> countryDatabaseFile!!
         DatabaseType.City -> cityDatabaseFile!!

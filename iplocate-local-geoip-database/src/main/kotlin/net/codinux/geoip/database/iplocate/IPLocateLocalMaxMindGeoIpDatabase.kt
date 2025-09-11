@@ -90,7 +90,7 @@ open class IPLocateLocalMaxMindGeoIpDatabase(
         }
     }
 
-    protected fun getPathForType(type: DatabaseType): Path = when (type) {
+    protected open fun getPathForType(type: DatabaseType): Path = when (type) {
         DatabaseType.ASN -> asnDatabaseFile!!
         DatabaseType.Country -> countryDatabaseFile!!
         DatabaseType.City -> throw IllegalArgumentException("IPLocate.io does not have a City GeoIP database file")

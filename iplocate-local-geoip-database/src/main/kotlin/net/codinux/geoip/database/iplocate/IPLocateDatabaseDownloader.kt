@@ -5,12 +5,13 @@ import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.download.DownloadAndSaveFileResult
 import net.codinux.geoip.database.download.Downloader
 import net.codinux.geoip.database.download.FileModifiedInformation
+import net.dankito.web.client.ClientConfig
 import net.dankito.web.client.JavaHttpClientWebClient
 import net.dankito.web.client.WebClient
 import java.nio.file.Path
 
 open class IPLocateDatabaseDownloader(
-    webClient: WebClient = JavaHttpClientWebClient()
+    webClient: WebClient = JavaHttpClientWebClient(ClientConfig(defaultAccept = "*/*", defaultContentType = "*/*", logErroneousResponses = true))
 ) : Downloader(webClient, "IPLocate.io") {
 
     companion object {

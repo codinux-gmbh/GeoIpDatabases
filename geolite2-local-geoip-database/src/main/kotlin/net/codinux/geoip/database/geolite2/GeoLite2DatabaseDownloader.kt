@@ -16,7 +16,8 @@ import java.time.Instant
 open class GeoLite2DatabaseDownloader(
     accountId: String,
     licenseKey: String,
-    webClient: WebClient = JavaHttpClientWebClient(ClientConfig(authentication = BasicAuthAuthentication(accountId, licenseKey)))
+    webClient: WebClient = JavaHttpClientWebClient(ClientConfig(authentication = BasicAuthAuthentication(accountId, licenseKey),
+        defaultAccept = "*/*", defaultContentType = "*/*", logErroneousResponses = true)),
 ) : Downloader(webClient, "GeoLite2") {
 
     companion object {

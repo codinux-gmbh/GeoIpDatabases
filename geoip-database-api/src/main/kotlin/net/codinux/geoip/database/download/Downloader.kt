@@ -97,6 +97,9 @@ open class Downloader(
             saveToFile(saveDownloadedZipFile, extractTo.parent.resolve(downloadedFile.filename), downloadedFile.bytes)
 
             val successfullyExtracted = extractFile(downloadedFile, extractTo, fileEndingInZipFile)
+            if (successfullyExtracted) {
+                downloadedFile.sizeInBytes = extractTo.fileSize() // extracted file size is different from downloaded .zip file size
+            }
 
             DownloadAndExtractFilesResult.downloadSuccess(successfullyExtracted, downloadedFile, extractTo)
         }

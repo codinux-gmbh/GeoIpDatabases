@@ -10,7 +10,7 @@ data class Location(
      * location of the end-user falls within the area defined by the accuracy radius and the latitude and longitude
      * coordinates.
      */
-    val accuracyRadiusKilometers: Int,
+    val accuracyRadiusKilometers: Int? = null,
 ) {
     override fun toString() = "($latitude, $longitude)"
 }

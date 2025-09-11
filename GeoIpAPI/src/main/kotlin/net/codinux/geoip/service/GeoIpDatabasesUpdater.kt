@@ -133,7 +133,7 @@ class GeoIpDatabasesUpdater(
             // TODO: too early? wait till temp file has been moved into place?
             state.update(downloadedFile)
 
-            log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.bytes.size} bytes to ${state.downloadPath}" }
+            log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.sizeInBytes} bytes to ${state.downloadPath}" }
         } else if (hasNewer) { // error is logged in downloadAsync() and downloadToAsync()
             state.updateDownloadFailed(result?.error)
         } else {
@@ -204,7 +204,7 @@ class GeoIpDatabasesUpdater(
             // TODO: too early? wait till temp file has been moved into place?
             state.update(downloadedFile)
 
-            log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.bytes.size} bytes to ${state.downloadPath}" }
+            log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.sizeInBytes} bytes to ${state.downloadPath}" }
         } else if (hasNewer) { // error is logged in downloadAsync() and downloadToAsync()
             state.updateDownloadFailed(result?.errors?.firstOrNull())
         } else {

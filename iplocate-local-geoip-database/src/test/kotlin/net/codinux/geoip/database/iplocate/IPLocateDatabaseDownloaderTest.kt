@@ -95,7 +95,7 @@ class IPLocateDatabaseDownloaderTest {
         assertDatabase(result.successful, destination, expectedMinFileSize)
 
         assertThat(result::downloadedFile).isNotNull()
-        assertThat(result.downloadedFile!!.bytes.size.toLong()).isGreaterThanOrEqualTo(expectedMinFileSize)
+        assertThat(result.downloadedFile!!.sizeInBytes!!).isGreaterThanOrEqualTo(expectedMinFileSize)
     }
 
     private fun assertDatabase(result: DownloadAndExtractFilesResult, destination: Path, expectedMinFileSize: Long) {
@@ -104,7 +104,7 @@ class IPLocateDatabaseDownloaderTest {
         assertDatabase(result.successful, destination, expectedMinFileSize)
 
         assertThat(result::downloadedFile).isNotNull()
-        assertThat(result.downloadedFile!!.bytes.size.toLong()).isGreaterThanOrEqualTo(expectedMinFileSize)
+        assertThat(result.downloadedFile!!.sizeInBytes!!).isGreaterThanOrEqualTo(expectedMinFileSize)
     }
 
     private fun assertDatabase(result: Boolean, destination: Path, expectedMinFileSize: Long) {

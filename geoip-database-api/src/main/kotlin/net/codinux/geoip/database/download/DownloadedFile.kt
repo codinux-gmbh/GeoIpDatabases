@@ -1,5 +1,7 @@
 package net.codinux.geoip.database.download
 
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.time.Instant
 
 data class DownloadedFile(
@@ -12,4 +14,7 @@ data class DownloadedFile(
     val eTag: String? = null,
 ) {
     var sizeInBytes: Long = bytes.size.toLong()
+
+    fun createInputStream(): InputStream =
+        ByteArrayInputStream(bytes)
 }

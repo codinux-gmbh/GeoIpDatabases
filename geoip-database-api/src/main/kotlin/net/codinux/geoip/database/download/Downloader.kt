@@ -7,7 +7,6 @@ import net.dankito.web.client.ResponseDetails
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.get
 import net.dankito.web.client.head
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
@@ -15,6 +14,8 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.io.path.createDirectories
+import kotlin.io.path.fileSize
+import kotlin.io.path.outputStream
 import kotlin.io.path.writeBytes
 
 open class Downloader(
@@ -44,7 +45,7 @@ open class Downloader(
             DownloadAndSaveFileResult.error(downloadUrl, downloadResult.error)
         } else {
             try {
-                val successful = saveToFile(downloadTo, downloadResult.downloadedFile.bytes)
+                val successful = saveToFile(downloadTo, downloadResult.downloadedFile)
 
                 DownloadAndSaveFileResult.downloadSuccess(successful, downloadUrl, downloadResult.downloadedFile, downloadTo)
             } catch (e: Throwable) {
@@ -94,7 +95,7 @@ open class Downloader(
             DownloadAndExtractFilesResult.error(downloadResult.error)
         } else {
             val downloadedFile = downloadResult.downloadedFile
-            saveToFile(saveDownloadedZipFile, extractTo.parent.resolve(downloadedFile.filename), downloadedFile.bytes)
+            saveToFile(saveDownloadedZipFile, extractTo.parent.resolve(downloadedFile.filename), downloadedFile)
 
             val successfullyExtracted = extractFile(downloadedFile, extractTo, fileEndingInZipFile)
             if (successfullyExtracted) {
@@ -111,12 +112,12 @@ open class Downloader(
     protected open fun extractFile(downloadedFile: DownloadedFile, extractTo: Path, fileEndingInZipFile: String?): Boolean =
         if (downloadedFile.contentType.substringBefore(';').endsWith("/gzip", true)) {
             if (downloadedFile.filename.endsWith(".tar.gz", true)) {
-                extractor.extractTarGz(ByteArrayInputStream(downloadedFile.bytes), extractTo, fileEndingInZipFile ?: "")
+                extractor.extractTarGz(downloadedFile.createInputStream(), extractTo, fileEndingInZipFile ?: "")
             } else {
-                extractor.gunzip(ByteArrayInputStream(downloadedFile.bytes), extractTo)
+                extractor.gunzip(downloadedFile.createInputStream(), extractTo)
             }
         } else {
-            extractor.unzip(ByteArrayInputStream(downloadedFile.bytes), extractTo, fileEndingInZipFile ?: "")
+            extractor.unzip(downloadedFile.createInputStream(), extractTo, fileEndingInZipFile ?: "")
         }
 
     protected open suspend fun downloadAndExtractFilesAsync(downloadUrl: String, extractToFolder: Path, filesMatching: Set<String>, saveDownloadedZipFile: Boolean = false): DownloadAndExtractFilesResult = try {
@@ -126,9 +127,9 @@ open class Downloader(
         } else {
             val downloadedFile = downloadResult.downloadedFile
 
-            saveToFile(saveDownloadedZipFile, extractToFolder.resolve(downloadedFile.filename), downloadedFile.bytes)
+            saveToFile(saveDownloadedZipFile, extractToFolder.resolve(downloadedFile.filename), downloadedFile)
 
-            val (successfullyExtracted, extractedTo, errors) = extractor.unzipMultipleFiles(ByteArrayInputStream(downloadedFile.bytes), extractToFolder, filesMatching)
+            val (successfullyExtracted, extractedTo, errors) = extractor.unzipMultipleFiles(downloadedFile.createInputStream(), extractToFolder, filesMatching)
 
             DownloadAndExtractFilesResult.downloadSuccess(successfullyExtracted, downloadedFile, extractedTo, errors)
         }
@@ -168,16 +169,16 @@ open class Downloader(
     }
 
 
-    protected open fun saveToFile(shouldSave: Boolean, downloadTo: Path, fileContent: ByteArray): Boolean? =
+    protected open fun saveToFile(shouldSave: Boolean, downloadTo: Path, file: DownloadedFile): Boolean? =
         if (shouldSave) {
-            saveToFile(downloadTo, fileContent)
+            saveToFile(downloadTo, file)
         } else {
             null
         }
 
-    protected open fun saveToFile(downloadTo: Path, fileContent: ByteArray): Boolean {
+    protected open fun saveToFile(downloadTo: Path, file: DownloadedFile): Boolean {
         downloadTo.parent.createDirectories()
-        downloadTo.writeBytes(fileContent)
+        downloadTo.writeBytes(file.bytes)
 
         return true
     }

@@ -20,6 +20,8 @@ import net.codinux.geoip.service.model.GeoIpDatabaseFileState
 import net.codinux.geoip.service.model.GeoIpProviderDatabaseFileStates
 import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
 import net.codinux.log.logger
+import net.codinux.log.stacktrace.StackTraceExtractor
+import net.codinux.log.stacktrace.StackTraceInverter
 import java.nio.file.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.moveTo
@@ -48,6 +50,10 @@ class GeoIpDatabasesUpdater(
     } else {
         null
     }
+
+    private val stackTraceExtractor = StackTraceExtractor()
+
+    private val stackTraceInverter = StackTraceInverter()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -228,7 +234,11 @@ class GeoIpDatabasesUpdater(
         state.downloadState in updateFailed
 
     private fun getErrorMessage(error: Throwable?): String? = error?.let {
-        it.message
+        // get root cause which in most cases tells the real error
+        val stackTrace = stackTraceExtractor.extractStackTrace(error)
+        val rootCause = stackTraceInverter.rootCauseFirst(stackTrace)
+
+        "${rootCause.messageLine} as ${rootCause.stackTrace.firstOrNull()?.line ?: rootCause.causedBy?.stackTrace?.firstOrNull()?.line ?: "-"}" // TODO: add Exception class
     }
 
 

@@ -8,7 +8,6 @@ import kotlinx.coroutines.*
 import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.config.GeoLite2Config
 import net.codinux.geoip.config.IPLocateConfig
-import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.download.DownloadAndExtractFilesResult
 import net.codinux.geoip.database.download.DownloadAndSaveFileResult
@@ -135,7 +134,7 @@ class GeoIpDatabasesUpdater(
 
             log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.sizeInBytes} bytes to ${state.downloadPath}" }
         } else if (hasNewer) { // error is logged in downloadAsync() and downloadToAsync()
-            state.updateDownloadFailed(result?.error)
+            state.updateDownloadFailed(getErrorMessage(result?.error))
         } else {
             log.info { "Checked ${state.provider} ${state.type} database file but no newer file available" }
         }
@@ -206,7 +205,7 @@ class GeoIpDatabasesUpdater(
 
             log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.sizeInBytes} bytes to ${state.downloadPath}" }
         } else if (hasNewer) { // error is logged in downloadAsync() and downloadToAsync()
-            state.updateDownloadFailed(result?.errors?.firstOrNull())
+            state.updateDownloadFailed(getErrorMessage(result?.errors?.firstOrNull()))
         } else {
             log.info { "Checked ${state.provider} ${state.type} database file but no newer file available" }
         }
@@ -227,6 +226,10 @@ class GeoIpDatabasesUpdater(
 
     private fun updateFailed(state: GeoIpDatabaseFileState): Boolean =
         state.downloadState in updateFailed
+
+    private fun getErrorMessage(error: Throwable?): String? = error?.let {
+        it.message
+    }
 
 
     private fun tempFile(path: Path): Path = path.parent.resolve(path.name + ".tmp")

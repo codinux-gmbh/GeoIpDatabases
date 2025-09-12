@@ -100,9 +100,9 @@ class DatabaseFilesDownloadedStartupHealthCheck(
         if (fileState.downloadState == DownloadFileState.UpToDate) {
             "Successfully downloaded at ${formatTime(fileState.lastDownloaded)}"
         } else if (fileState.downloadState == DownloadFileState.DownloadedButUpdateFailed) {
-            "Older file downloaded, but Update failed at ${formatTime(fileState.lastUpdateFailedTime)} with error: ${fileState.lastUpdateFailedError}"
-        } else if (fileState.lastUpdateFailedError != null) {
-            "Not downloaded yet, last Update failed at ${formatTime(fileState.lastUpdateFailedTime)} with error: ${fileState.lastUpdateFailedError}"
+            "Older file downloaded, but Update failed at ${formatTime(fileState.lastUpdateFailedTime)} with error: ${fileState.lastUpdateFailedErrorMessage}"
+        } else if (fileState.lastUpdateFailedErrorMessage != null) {
+            "Not downloaded yet, last Update failed at ${formatTime(fileState.lastUpdateFailedTime)} with error: ${fileState.lastUpdateFailedErrorMessage}"
         } else {
             "Not downloaded"
         }

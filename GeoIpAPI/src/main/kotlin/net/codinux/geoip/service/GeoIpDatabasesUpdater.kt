@@ -230,9 +230,6 @@ class GeoIpDatabasesUpdater(
                 downloadStates.any { it != DownloadFileState.DownloadDisabled }
     }
 
-    private fun updateFailed(state: GeoIpDatabaseFileState): Boolean =
-        state.downloadState in updateFailed
-
     private fun getErrorMessage(error: Throwable?): String? = error?.let {
         // get root cause which in most cases tells the real error
         val stackTrace = stackTraceExtractor.extractStackTrace(error)

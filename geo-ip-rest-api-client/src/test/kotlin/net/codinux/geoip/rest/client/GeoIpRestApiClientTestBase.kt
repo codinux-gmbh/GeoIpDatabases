@@ -9,15 +9,15 @@ import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.ProviderGeoIpInformation
 import net.codinux.geoip.rest.client.test.TestConfig
 import net.codinux.geoip.rest.client.test.TestData
-import net.dankito.web.client.ClientConfig
-import net.dankito.web.client.JavaHttpClientWebClient
+import net.dankito.web.client.WebClient
 import net.dankito.web.client.WebClientResult
-import net.dankito.web.client.serialization.JacksonJsonSerializer
 import kotlin.test.Test
 
-class GeoIpRestApiClientTest {
+abstract class GeoIpRestApiClientTestBase {
 
-    private val underTest = GeoIpRestApiClient(TestConfig.ApiEndpoint, JavaHttpClientWebClient(ClientConfig(serializer = JacksonJsonSerializer())))
+    private val underTest = GeoIpRestApiClient(TestConfig.ApiEndpoint, createWebClient())
+
+    abstract fun createWebClient(): WebClient
 
 
     @Test

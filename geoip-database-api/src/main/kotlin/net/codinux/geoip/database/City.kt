@@ -1,5 +1,8 @@
 package net.codinux.geoip.database
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 open class City(
     val name: String?,
     val country: Country,

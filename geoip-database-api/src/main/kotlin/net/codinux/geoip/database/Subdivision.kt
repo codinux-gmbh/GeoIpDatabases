@@ -1,5 +1,8 @@
 package net.codinux.geoip.database
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Subdivision(
     /**
      * ISO 3166-2 Subdivision Code

@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
 
@@ -13,6 +14,7 @@ kotlin {
 
 
 val coroutinesVersion: String by project
+val kotlinSerializationVersion: String by project
 
 val apacheCompressVersion: String by project
 
@@ -23,6 +25,7 @@ val assertKVersion: String by project
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinSerializationVersion")
 
     api("net.dankito.web:web-client-api:$webClientVersion")
 

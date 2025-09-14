@@ -1,5 +1,8 @@
 package net.codinux.geoip.database
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 class AutonomousSystem(
     val autonomousSystemNumber: Long,
     val name: String,

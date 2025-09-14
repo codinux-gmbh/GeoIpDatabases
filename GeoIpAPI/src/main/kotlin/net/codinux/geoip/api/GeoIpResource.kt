@@ -13,8 +13,8 @@ import jakarta.ws.rs.ServerErrorException
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
-import net.codinux.geoip.api.dto.AllGeoIpProviderData
-import net.codinux.geoip.api.dto.GeoIpProviderData
+import net.codinux.geoip.database.AllGeoIpProviderData
+import net.codinux.geoip.database.GeoIpProviderData
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country

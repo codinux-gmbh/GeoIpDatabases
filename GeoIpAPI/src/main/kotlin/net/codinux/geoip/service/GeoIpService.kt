@@ -4,8 +4,8 @@ import io.vertx.core.http.HttpServerRequest
 import jakarta.enterprise.event.Observes
 import jakarta.inject.Singleton
 import jakarta.ws.rs.core.Response
-import net.codinux.geoip.api.dto.AllGeoIpProviderData
-import net.codinux.geoip.api.dto.GeoIpProviderData
+import net.codinux.geoip.database.AllGeoIpProviderData
+import net.codinux.geoip.database.GeoIpProviderData
 import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City

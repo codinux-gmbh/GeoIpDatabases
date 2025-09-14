@@ -1,4 +1,4 @@
-package net.codinux.geoip.api.dto
+package net.codinux.geoip.database
 
 /**
  * Contains all geo information data of all available GeoIP database providers like

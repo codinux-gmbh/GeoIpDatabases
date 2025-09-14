@@ -1,8 +1,4 @@
-package net.codinux.geoip.api.dto
-
-import net.codinux.geoip.database.AutonomousSystem
-import net.codinux.geoip.database.City
-import net.codinux.geoip.database.Country
+package net.codinux.geoip.database
 
 /**
  * Contains all geo information data for a GeoIP database provider like GeoLite2, IPLocate.io, ... or an IP address.

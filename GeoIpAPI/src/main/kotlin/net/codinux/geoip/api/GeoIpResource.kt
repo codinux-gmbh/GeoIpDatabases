@@ -13,8 +13,8 @@ import jakarta.ws.rs.ServerErrorException
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
-import net.codinux.geoip.database.AllGeoIpProviderData
-import net.codinux.geoip.database.GeoIpProviderData
+import net.codinux.geoip.database.AllProviderGeoIpInformation
+import net.codinux.geoip.database.ProviderGeoIpInformation
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
@@ -128,7 +128,7 @@ class GeoIpResource(
     fun lookupProviderGeoIpInformation(
         @PathParam("provider") provider: DatabaseProvider,
         @PathParam("ipAddress") ipAddress: String
-    ): GeoIpProviderData =
+    ): ProviderGeoIpInformation =
         executeRequest {
             service.lookupProviderGeoIpInformation(provider, ipAddress)
         }
@@ -145,7 +145,7 @@ class GeoIpResource(
     @GET
     @Path("/all/{ipAddress}")
     @Operation(summary = "Lookup all available geo information from all GeoIP database providers for an IP address")
-    fun lookupAllGeoIpInformation(@PathParam("ipAddress") ipAddress: String): AllGeoIpProviderData? =
+    fun lookupAllGeoIpInformation(@PathParam("ipAddress") ipAddress: String): AllProviderGeoIpInformation? =
         service.lookupAll(ipAddress)
 
 
@@ -162,7 +162,7 @@ class GeoIpResource(
     @Path("/best/{ipAddress}")
     @Operation(summary = "Lookup geo information from GeoIP database provider that provides the best information for a " +
             "type like City from GeoLite2 and Autonomous System from IPLocate for an IP address")
-    fun lookupBestGeoIpInformation(@PathParam("ipAddress") ipAddress: String): GeoIpProviderData =
+    fun lookupBestGeoIpInformation(@PathParam("ipAddress") ipAddress: String): ProviderGeoIpInformation =
         service.lookupBest(ipAddress)
 
 

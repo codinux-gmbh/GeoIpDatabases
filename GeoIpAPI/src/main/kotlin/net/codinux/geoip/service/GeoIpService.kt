@@ -4,8 +4,8 @@ import io.vertx.core.http.HttpServerRequest
 import jakarta.enterprise.event.Observes
 import jakarta.inject.Singleton
 import jakarta.ws.rs.core.Response
-import net.codinux.geoip.database.AllGeoIpProviderData
-import net.codinux.geoip.database.GeoIpProviderData
+import net.codinux.geoip.database.AllProviderGeoIpInformation
+import net.codinux.geoip.database.ProviderGeoIpInformation
 import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
@@ -52,13 +52,13 @@ class GeoIpService(
             .ifNotSuccessful { geoLite2().lookupAsn(ipAddress) }
 
 
-    fun lookupProviderGeoIpInformation(databaseProvider: DatabaseProvider, ipAddress: String): GeoIpProviderData {
+    fun lookupProviderGeoIpInformation(databaseProvider: DatabaseProvider, ipAddress: String): ProviderGeoIpInformation {
         val provider = when (databaseProvider) {
             DatabaseProvider.GeoLite2 -> geoLite2()
             DatabaseProvider.IPLocate -> ipLocate()
         }
 
-        return GeoIpProviderData(
+        return ProviderGeoIpInformation(
             provider.lookupAsn(ipAddress).valueOrNull,
             provider.lookupCountry(ipAddress).valueOrNull,
             provider.lookupCity(ipAddress).valueOrNull
@@ -66,14 +66,14 @@ class GeoIpService(
     }
 
     fun lookupAll(ipAddress: String) = mapIp(ipAddress) { ip ->
-        AllGeoIpProviderData(
-            ipLocate = GeoIpProviderData(ipLocate().lookupAsn(ip).valueOrNull, ipLocate().lookupCountry(ip).valueOrNull, null),
-            geoLite2 = GeoIpProviderData(geoLite2().lookupAsn(ip).valueOrNull,
+        AllProviderGeoIpInformation(
+            ipLocate = ProviderGeoIpInformation(ipLocate().lookupAsn(ip).valueOrNull, ipLocate().lookupCountry(ip).valueOrNull, null),
+            geoLite2 = ProviderGeoIpInformation(geoLite2().lookupAsn(ip).valueOrNull,
                 geoLite2().lookupCountry(ip).valueOrNull, geoLite2().lookupCity(ip).valueOrNull)
         )
     }.valueOrNull
 
-    fun lookupBest(ipAddress: String) = GeoIpProviderData(
+    fun lookupBest(ipAddress: String) = ProviderGeoIpInformation(
         lookupAsn(ipAddress).valueOrNull,
         lookupCountry(ipAddress).valueOrNull,
         lookupCity(ipAddress).valueOrNull

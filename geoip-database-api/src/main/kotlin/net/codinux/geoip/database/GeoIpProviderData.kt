@@ -1,7 +1,7 @@
 package net.codinux.geoip.database
 
 /**
- * Contains all geo information data for a GeoIP database provider like GeoLite2, IPLocate.io, ... or an IP address.
+ * Contains all geo information data to an IP address for a GeoIP database provider like GeoLite2, IPLocate.io, ...
  */
 data class GeoIpProviderData(
     val asn: AutonomousSystem?,

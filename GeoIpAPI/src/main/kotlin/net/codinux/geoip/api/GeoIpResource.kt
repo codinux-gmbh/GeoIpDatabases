@@ -18,6 +18,7 @@ import net.codinux.geoip.database.GeoIpProviderData
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
+import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.LookupResult
 import net.codinux.geoip.service.GeoIpService
 import org.eclipse.microprofile.openapi.annotations.Operation
@@ -107,6 +108,29 @@ class GeoIpResource(
     fun lookupAsn(@PathParam("ipAddress") ipAddress: String): AutonomousSystem? =
         mapResult {
             service.lookupAsn(ipAddress)
+        }
+
+
+    @GET
+    @Path("/providers/{provider}/me")
+    @Operation(summary = "all geo information data to an IP address for a GeoIP database provider like GeoLite2, IPLocate.io, ... for the IP address of the caller")
+    fun lookupProviderGeoIpInformationForCaller(
+        @PathParam("provider") provider: DatabaseProvider,
+        @Context request: HttpServerRequest
+    ) =
+        service.withCallerIp(request) {
+            lookupProviderGeoIpInformation(provider, it)
+        }
+
+    @GET
+    @Path("/providers/{provider}/{ipAddress}")
+    @Operation(summary = "Lookup all geo information data to an IP address for a GeoIP database provider like GeoLite2, IPLocate.io, ...")
+    fun lookupProviderGeoIpInformation(
+        @PathParam("provider") provider: DatabaseProvider,
+        @PathParam("ipAddress") ipAddress: String
+    ): GeoIpProviderData =
+        executeRequest {
+            service.lookupProviderGeoIpInformation(provider, ipAddress)
         }
 
 

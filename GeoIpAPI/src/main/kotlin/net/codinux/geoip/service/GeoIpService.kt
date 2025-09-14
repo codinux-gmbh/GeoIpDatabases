@@ -51,6 +51,20 @@ class GeoIpService(
         ipLocate().lookupAsn(ipAddress)
             .ifNotSuccessful { geoLite2().lookupAsn(ipAddress) }
 
+
+    fun lookupProviderGeoIpInformation(databaseProvider: DatabaseProvider, ipAddress: String): GeoIpProviderData {
+        val provider = when (databaseProvider) {
+            DatabaseProvider.GeoLite2 -> geoLite2()
+            DatabaseProvider.IPLocate -> ipLocate()
+        }
+
+        return GeoIpProviderData(
+            provider.lookupAsn(ipAddress).valueOrNull,
+            provider.lookupCountry(ipAddress).valueOrNull,
+            provider.lookupCity(ipAddress).valueOrNull
+        )
+    }
+
     fun lookupAll(ipAddress: String) = mapIp(ipAddress) { ip ->
         AllGeoIpProviderData(
             ipLocate = GeoIpProviderData(ipLocate().lookupAsn(ip).valueOrNull, ipLocate().lookupCountry(ip).valueOrNull, null),

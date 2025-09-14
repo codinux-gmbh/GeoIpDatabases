@@ -14,7 +14,7 @@ import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import net.codinux.geoip.api.dto.AllGeoIpDatabaseResponses
-import net.codinux.geoip.api.dto.GeoIpDatabaseResponses
+import net.codinux.geoip.api.dto.GeoIpProviderData
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
 import net.codinux.geoip.database.Country
@@ -138,7 +138,7 @@ class GeoIpResource(
     @Path("/best/{ipAddress}")
     @Operation(summary = "Lookup geo information from GeoIP database provider that provides the best information for a " +
             "type like City from GeoLite2 and Autonomous System from IPLocate for an IP address")
-    fun lookupBestGeoIpInformation(@PathParam("ipAddress") ipAddress: String): GeoIpDatabaseResponses? =
+    fun lookupBestGeoIpInformation(@PathParam("ipAddress") ipAddress: String): GeoIpProviderData =
         service.lookupBest(ipAddress)
 
 

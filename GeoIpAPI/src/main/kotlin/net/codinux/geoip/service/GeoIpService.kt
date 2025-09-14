@@ -5,7 +5,7 @@ import jakarta.enterprise.event.Observes
 import jakarta.inject.Singleton
 import jakarta.ws.rs.core.Response
 import net.codinux.geoip.api.dto.AllGeoIpDatabaseResponses
-import net.codinux.geoip.api.dto.GeoIpDatabaseResponses
+import net.codinux.geoip.api.dto.GeoIpProviderData
 import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
@@ -53,13 +53,13 @@ class GeoIpService(
 
     fun lookupAll(ipAddress: String) = mapIp(ipAddress) { ip ->
         AllGeoIpDatabaseResponses(
-            ipLocate = GeoIpDatabaseResponses(ipLocate().lookupAsn(ip).valueOrNull, ipLocate().lookupCountry(ip).valueOrNull, null),
-            geoLite2 = GeoIpDatabaseResponses(geoLite2().lookupAsn(ip).valueOrNull,
+            ipLocate = GeoIpProviderData(ipLocate().lookupAsn(ip).valueOrNull, ipLocate().lookupCountry(ip).valueOrNull, null),
+            geoLite2 = GeoIpProviderData(geoLite2().lookupAsn(ip).valueOrNull,
                 geoLite2().lookupCountry(ip).valueOrNull, geoLite2().lookupCity(ip).valueOrNull)
         )
     }.valueOrNull
 
-    fun lookupBest(ipAddress: String) = GeoIpDatabaseResponses(
+    fun lookupBest(ipAddress: String) = GeoIpProviderData(
         lookupAsn(ipAddress).valueOrNull,
         lookupCountry(ipAddress).valueOrNull,
         lookupCity(ipAddress).valueOrNull

@@ -30,3 +30,4 @@ include("iplocate-local-geoip-database")
 include("geolite2-local-geoip-database")
 
 include("GeoIpAPI")
+include("geo-ip-rest-api-client")

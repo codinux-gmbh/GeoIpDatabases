@@ -13,7 +13,7 @@ import jakarta.ws.rs.ServerErrorException
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
-import net.codinux.geoip.api.dto.AllGeoIpDatabaseResponses
+import net.codinux.geoip.api.dto.AllGeoIpProviderData
 import net.codinux.geoip.api.dto.GeoIpProviderData
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
@@ -121,7 +121,7 @@ class GeoIpResource(
     @GET
     @Path("/all/{ipAddress}")
     @Operation(summary = "Lookup all available geo information from all GeoIP database providers for an IP address")
-    fun lookupAllGeoIpInformation(@PathParam("ipAddress") ipAddress: String): AllGeoIpDatabaseResponses? =
+    fun lookupAllGeoIpInformation(@PathParam("ipAddress") ipAddress: String): AllGeoIpProviderData? =
         service.lookupAll(ipAddress)
 
 

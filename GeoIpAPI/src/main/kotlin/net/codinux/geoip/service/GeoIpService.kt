@@ -4,7 +4,7 @@ import io.vertx.core.http.HttpServerRequest
 import jakarta.enterprise.event.Observes
 import jakarta.inject.Singleton
 import jakarta.ws.rs.core.Response
-import net.codinux.geoip.api.dto.AllGeoIpDatabaseResponses
+import net.codinux.geoip.api.dto.AllGeoIpProviderData
 import net.codinux.geoip.api.dto.GeoIpProviderData
 import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.database.AutonomousSystem
@@ -52,7 +52,7 @@ class GeoIpService(
             .ifNotSuccessful { geoLite2().lookupAsn(ipAddress) }
 
     fun lookupAll(ipAddress: String) = mapIp(ipAddress) { ip ->
-        AllGeoIpDatabaseResponses(
+        AllGeoIpProviderData(
             ipLocate = GeoIpProviderData(ipLocate().lookupAsn(ip).valueOrNull, ipLocate().lookupCountry(ip).valueOrNull, null),
             geoLite2 = GeoIpProviderData(geoLite2().lookupAsn(ip).valueOrNull,
                 geoLite2().lookupCountry(ip).valueOrNull, geoLite2().lookupCity(ip).valueOrNull)

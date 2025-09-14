@@ -21,18 +21,34 @@ class GeoIpRestApiClientTest {
 
 
     @Test
-    fun getProviderGeoIpInformation_GeoLite2() = runTest {
-        val result = underTest.getProviderGeoIpInformation(DatabaseProvider.GeoLite2, TestData.GoogleBotIp)
+    fun lookupProviderGeoIpInformation_GeoLite2() = runTest {
+        val result = underTest.lookupProviderGeoIpInformation(DatabaseProvider.GeoLite2, TestData.GoogleBotIp)
 
         assertGoogleBotGeoIpInformation(result)
     }
 
     @Test
-    fun getProviderGeoIpInformation_IPLocate() = runTest {
-        val result = underTest.getProviderGeoIpInformation(DatabaseProvider.IPLocate, TestData.GoogleBotIp)
+    fun lookupProviderGeoIpInformation_IPLocate() = runTest {
+        val result = underTest.lookupProviderGeoIpInformation(DatabaseProvider.IPLocate, TestData.GoogleBotIp)
 
         assertGoogleBotGeoIpInformation(result, true)
     }
+
+
+    @Test
+    fun lookupAllGeoIpInformation() = runTest {
+        val result = underTest.lookupAllGeoIpInformation(TestData.GoogleBotIp)
+
+        assertThat(result::successful).isTrue()
+        assertThat(result::body).isNotNull()
+
+        assertThat(result.body!!::geoLite2).isNotNull()
+        assertGoogleBotGeoIpInformation(result.body!!.geoLite2)
+
+        assertThat(result.body!!::ipLocate).isNotNull()
+        assertGoogleBotGeoIpInformation(result.body!!.ipLocate, true)
+    }
+
 
     private fun assertGoogleBotGeoIpInformation(result: WebClientResult<ProviderGeoIpInformation>, isCityAllowedToBeNull: Boolean = false) {
         assertThat(result::successful).isTrue()
@@ -40,6 +56,10 @@ class GeoIpRestApiClientTest {
 
         val geoIpInformation = result.body!!
 
+        assertGoogleBotGeoIpInformation(geoIpInformation, isCityAllowedToBeNull)
+    }
+
+    private fun assertGoogleBotGeoIpInformation(geoIpInformation: ProviderGeoIpInformation, isCityAllowedToBeNull: Boolean = false) {
         assertThat(geoIpInformation::asn).isNotNull()
         assertThat(geoIpInformation.asn!!.name).isEqualTo("GOOGLE")
 

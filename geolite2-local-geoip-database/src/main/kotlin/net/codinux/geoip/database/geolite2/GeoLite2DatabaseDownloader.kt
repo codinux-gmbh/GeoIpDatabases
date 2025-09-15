@@ -9,9 +9,7 @@ import net.dankito.web.client.ClientConfig
 import net.dankito.web.client.JavaHttpClientWebClient
 import net.dankito.web.client.WebClient
 import net.dankito.web.client.auth.BasicAuthAuthentication
-import net.dankito.web.client.head
 import java.nio.file.Path
-import java.time.Instant
 
 open class GeoLite2DatabaseDownloader(
     accountId: String,
@@ -40,6 +38,8 @@ open class GeoLite2DatabaseDownloader(
         }
 
 
+    // Downloading CSVs does not work. The issue seems to be that we are being redirected to Cloudflare, and when sending
+    // MaxMind BasicAuth header to Cloudflare this is counted as "400 Bad Request"
     suspend fun downloadTo(downloadTo: Path, type: DatabaseType, format: DatabaseFormat): DownloadAndExtractFilesResult {
         val url = getPermalink(type, format)
 

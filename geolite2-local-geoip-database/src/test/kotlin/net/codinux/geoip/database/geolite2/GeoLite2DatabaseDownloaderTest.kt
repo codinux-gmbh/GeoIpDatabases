@@ -120,7 +120,7 @@ class GeoLite2DatabaseDownloaderTest {
     private fun getDownloadFolder(): Path {
         val currentDir = Path("").absolute()
 
-        return currentDir.resolve("src/main/resources/databases/")
+        return currentDir.resolve("src/test/resources/databases/")
     }
 
 }

@@ -9,6 +9,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.test.Test
 
+// Run GeoLite2DatabaseDownloaderTest before these test to download IPLocate databases as we don't
+// want to store binary databases in Git
 class GeoLite2LocalMaxMindGeoIpDatabaseTest {
 
     private val underTest = GeoLite2LocalMaxMindGeoIpDatabase(

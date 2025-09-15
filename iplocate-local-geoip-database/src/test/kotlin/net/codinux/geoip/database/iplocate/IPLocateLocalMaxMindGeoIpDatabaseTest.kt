@@ -9,6 +9,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.test.Test
 
+// Run IPLocateDatabaseDownloaderTest before these test to download IPLocate databases as we don't
+// want to store binary databases in Git
 class IPLocateLocalMaxMindGeoIpDatabaseTest {
 
     private val underTest = IPLocateLocalMaxMindGeoIpDatabase(

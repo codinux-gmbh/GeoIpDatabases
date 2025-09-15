@@ -118,7 +118,7 @@ class IPLocateDatabaseDownloaderTest {
     private fun getDownloadDestination(filename: String): Path {
         val currentDir = Path("").absolute()
 
-        return currentDir.resolve("src/main/resources/databases/")
+        return currentDir.resolve("src/test/resources/databases")
             .resolve(filename)
     }
 

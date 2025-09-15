@@ -106,7 +106,7 @@ class GeoIpDatabasesUpdater(
 
     private suspend fun updateIPLocateDatabases(config: IPLocateConfig) = with (config) { withContext(Dispatchers.IO) {
         try {
-            if (asnPath != null || countryPath != null) {
+            if (download && (asnPath != null || countryPath != null)) {
                 val jobs = mutableListOf<Deferred<DownloadAndSaveFileResult?>>()
 
                 if (asnPath != null) {
@@ -154,14 +154,15 @@ class GeoIpDatabasesUpdater(
 
     private suspend fun updateGeoLite2Databases(config: GeoLite2Config) = with (config) {
         try {
-            if (asnPath != null || countryPath != null || cityPath != null) {
+            if (download && (asnPath != null || countryPath != null || cityPath != null)) {
                 if (accountId == null || licenseKey == null) {
                     if (hasGeoLite2CredentialsWarningBeenLogged == false) {
                         hasGeoLite2CredentialsWarningBeenLogged = true
                         log.error { """
                             Download is enabled for one or more GeoLite2 databases (ASN, Country, City), but the required GeoLite2 credentials are missing.
                             Please set environment variables GEOIP_GEOLITE2_ACCOUNT_ID and GEOIP_GEOLITE2_LICENSE_KEY, 
-                            or to get rid of this warning set all GeoLite2 database file paths to null or an empty string.
+                            or to get rid of this warning set either set GEOIP_GEOLITE2_DOWNLOAD to false or
+                            all GeoLite2 database file paths to null or an empty string.
                             For how to generate a license key see:
                             https://support.maxmind.com/hc/en-us/articles/4407111582235-Generate-a-License-Key
                         """.trimIndent()

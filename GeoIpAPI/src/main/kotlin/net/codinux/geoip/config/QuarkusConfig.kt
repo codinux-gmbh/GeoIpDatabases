@@ -31,13 +31,15 @@ class QuarkusConfig {
     @Produces
     fun geoIpConfig(quarkusConfig: GeoIpQuarkusConfig): GeoIpConfig {
         val dataFolder = Path(quarkusConfig.dataFolder())
+        val ipLocate = quarkusConfig.ipLocate()
+        val geoLite2 = quarkusConfig.geoLite2()
 
         return GeoIpConfig(
             dataFolder.resolve("GeoIpDownloadState.json"),
-            IPLocateConfig(path(dataFolder, quarkusConfig.ipLocate().asn()), path(dataFolder, quarkusConfig.ipLocate().country())),
-            GeoLite2Config(quarkusConfig.geoLite2().accountId().getOrNull(), quarkusConfig.geoLite2().licenseKey().getOrNull(),
-                path(dataFolder, quarkusConfig.geoLite2().asn()), path(dataFolder, quarkusConfig.geoLite2().country()),
-                path(dataFolder, quarkusConfig.geoLite2().city())),
+            IPLocateConfig(ipLocate.download(), path(dataFolder, ipLocate.asn()), path(dataFolder, ipLocate.country())),
+            GeoLite2Config(geoLite2.download(), geoLite2.accountId().getOrNull(), geoLite2.licenseKey().getOrNull(),
+                path(dataFolder, geoLite2.asn()), path(dataFolder, geoLite2.country()),
+                path(dataFolder, geoLite2.city())),
         )
     }
 

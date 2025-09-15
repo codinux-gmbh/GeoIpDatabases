@@ -24,6 +24,9 @@ interface GeoIpQuarkusConfig {
 }
 
 interface IPLocateQuarkusConfig {
+    @WithDefault("true")
+    fun download(): Boolean
+
     @WithDefault("iplocate/ip-to-asn.mmdb")
     fun asn(): Optional<String>
 
@@ -32,6 +35,9 @@ interface IPLocateQuarkusConfig {
 }
 
 interface GeoLite2QuarkusConfig {
+    @WithDefault("true")
+    fun download(): Boolean
+
     fun accountId(): Optional<String>
 
     fun licenseKey(): Optional<String>

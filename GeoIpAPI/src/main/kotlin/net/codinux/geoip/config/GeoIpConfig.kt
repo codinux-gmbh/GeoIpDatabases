@@ -10,11 +10,13 @@ data class GeoIpConfig(
 )
 
 data class IPLocateConfig(
+    val download: Boolean,
     val asnPath: Path?,
     val countryPath: Path?,
 )
 
 data class GeoLite2Config(
+    val download: Boolean,
     val accountId: String? = null,
     val licenseKey: String? = null,
 

@@ -5,6 +5,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import kotlinx.coroutines.test.runTest
+import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.ProviderGeoIpInformation
 import net.codinux.geoip.rest.client.test.TestConfig
@@ -33,6 +34,20 @@ abstract class GeoIpRestApiClientTestBase {
         val result = underTest.lookupProviderGeoIpInformation(DatabaseProvider.GeoLite2, TestData.GoogleBotIp)
 
         assertGoogleBotGeoIpInformation(result)
+    }
+
+    @Test
+    fun lookupProviderGeoIpInformation_GeoLite2_MissingContinentGetsLookedUp() = runTest {
+        val result = underTest.lookupProviderGeoIpInformation(DatabaseProvider.GeoLite2, "1.0.0.0") // for this IP GeoLite2 contains no data for continent
+
+        assertThat(result::successful).isTrue()
+        assertThat(result::body).isNotNull()
+
+        assertThat(result.body!!::country).isNotNull()
+        assertThat(result.body!!.country!!::continent).isEqualTo(Continent.Oceania)
+
+        assertThat(result.body!!::city).isNotNull()
+        assertThat(result.body!!.city!!.country::continent).isEqualTo(Continent.Oceania)
     }
 
     @Test

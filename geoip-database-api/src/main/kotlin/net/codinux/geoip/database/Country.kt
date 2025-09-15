@@ -8,7 +8,7 @@ open class Country(
     val name: String,
     // sadly in GeoLite2 continent.code is sometimes null, so i cannot make it non-nullable
     // TODO: implement countryIsoCode -> continentCode lookup
-    val continent: Continent?,
+    var continent: Continent?,
     val geoNameId: Long? = null,
     val isInEuropeanUnion: Boolean = false,
 ) {

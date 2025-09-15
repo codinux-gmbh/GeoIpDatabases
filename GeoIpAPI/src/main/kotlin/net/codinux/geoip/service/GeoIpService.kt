@@ -9,6 +9,7 @@ import net.codinux.geoip.database.ProviderGeoIpInformation
 import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.database.AutonomousSystem
 import net.codinux.geoip.database.City
+import net.codinux.geoip.database.Continent
 import net.codinux.geoip.database.Country
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.LocalGeoIpDatabase
@@ -17,7 +18,6 @@ import net.codinux.geoip.database.geolite2.GeoLite2LocalMaxMindGeoIpDatabase
 import net.codinux.geoip.database.iplocate.IPLocateLocalMaxMindGeoIpDatabase
 import net.codinux.geoip.database.mapper.IpAddressMapper
 import net.codinux.geoip.event.ProviderDatabasesDownloadResultEvent
-import net.codinux.log.logger
 import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicReference
 
@@ -37,15 +37,19 @@ class GeoIpService(
 
     private val ipMapper = IpAddressMapper()
 
-    private val log by logger()
-
 
     fun lookupCountry(ipAddress: String): LookupResult<Country> =
-        geoLite2().lookupCountry(ipAddress)
+        lookupCountryWithGeoLite2(ipAddress)
             .ifNotSuccessful { ipLocate().lookupCountry(ipAddress) }
 
+    private fun lookupCountryWithGeoLite2(ipAddress: String): LookupResult<Country> =
+        lookupMissingGeoLite2Continent(geoLite2().lookupCountry(ipAddress), ipAddress)
+
     fun lookupCity(ipAddress: String): LookupResult<City> =
-        geoLite2().lookupCity(ipAddress)
+        lookupCityWithGeoLite2(ipAddress)
+
+    private fun lookupCityWithGeoLite2(ipAddress: String): LookupResult<City> =
+        lookupMissingGeoLite2ContinentForCity(geoLite2().lookupCity(ipAddress), ipAddress)
 
     fun lookupAsn(ipAddress: String): LookupResult<AutonomousSystem> =
         ipLocate().lookupAsn(ipAddress)
@@ -60,8 +64,8 @@ class GeoIpService(
 
         return ProviderGeoIpInformation(
             provider.lookupAsn(ipAddress).valueOrNull,
-            provider.lookupCountry(ipAddress).valueOrNull,
-            provider.lookupCity(ipAddress).valueOrNull
+            lookupMissingGeoLite2Continent(provider.lookupCountry(ipAddress), ipAddress).valueOrNull,
+            lookupMissingGeoLite2ContinentForCity(provider.lookupCity(ipAddress), ipAddress).valueOrNull
         )
     }
 
@@ -69,7 +73,7 @@ class GeoIpService(
         AllProviderGeoIpInformation(
             ipLocate = ProviderGeoIpInformation(ipLocate().lookupAsn(ip).valueOrNull, ipLocate().lookupCountry(ip).valueOrNull, null),
             geoLite2 = ProviderGeoIpInformation(geoLite2().lookupAsn(ip).valueOrNull,
-                geoLite2().lookupCountry(ip).valueOrNull, geoLite2().lookupCity(ip).valueOrNull)
+                lookupCountryWithGeoLite2(ipAddress).valueOrNull, lookupCityWithGeoLite2(ipAddress).valueOrNull)
         )
     }.valueOrNull
 
@@ -97,6 +101,25 @@ class GeoIpService(
     fun getCallerIp(request: HttpServerRequest): String? =
         request.headers().get("X-Forwarded-For") // if running behind a reverse proxy like a Nginx ingress
             ?: request.remoteAddress()?.hostAddress()
+
+
+    // GeoLite2 sometimes misses the Continent information. These methods look it up with IPLocate
+    private fun lookupMissingGeoLite2ContinentForCity(city: LookupResult<City>, ipAddress: String): LookupResult<City> = city.apply {
+        city.valueOrNull?.country?.let { country ->
+            lookupMissingGeoLite2Continent(country, ipAddress)
+        }
+    }
+
+    private fun lookupMissingGeoLite2Continent(country: LookupResult<Country>, ipAddress: String): LookupResult<Country> = country.apply {
+        country.valueOrNull?.let { country -> lookupMissingGeoLite2Continent(country, ipAddress) }
+    }
+
+    private fun lookupMissingGeoLite2Continent(country: Country, ipAddress: String): Country = country.apply {
+        continent = lookupMissingGeoLite2Continent(continent, ipAddress)
+    }
+
+    private fun lookupMissingGeoLite2Continent(continent: Continent?, ipAddress: String): Continent? =
+        continent ?: ipLocate().lookupCountry(ipAddress).valueOrNull?.continent
 
 
     fun onDatabaseFilesUpdated(@Observes event: ProviderDatabasesDownloadResultEvent) {

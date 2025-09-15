@@ -37,6 +37,6 @@ open class GeoIpRestApiClient(
 
 
     private fun join(pathSegment1: String, pathSegment2: String): String =
-        pathSegment1.trimEnd('/') + "/" + pathSegment2.trimStart('/')
+        pathSegment1.removeSuffix("/") + "/" + pathSegment2.removePrefix("/")
 
 }

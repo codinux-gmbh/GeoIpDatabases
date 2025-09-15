@@ -21,6 +21,14 @@ abstract class GeoIpRestApiClientTestBase {
 
 
     @Test
+    fun getBestAvailableGeoIpInformation() = runTest {
+        val result = underTest.getBestAvailableGeoIpInformation(TestData.GoogleBotIp)
+
+        assertGoogleBotGeoIpInformation(result)
+    }
+
+
+    @Test
     fun lookupProviderGeoIpInformation_GeoLite2() = runTest {
         val result = underTest.lookupProviderGeoIpInformation(DatabaseProvider.GeoLite2, TestData.GoogleBotIp)
 

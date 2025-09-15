@@ -17,6 +17,12 @@ open class GeoIpRestApiClient(
     }
 
 
+    open suspend fun getBestAvailableGeoIpInformation(ipAddress: String): WebClientResult<ProviderGeoIpInformation> {
+        val url = join(apiEndpoint, "$PathPrefix/best/$ipAddress")
+
+        return webClient.get(url)
+    }
+
     open suspend fun lookupProviderGeoIpInformation(provider: DatabaseProvider, ipAddress: String): WebClientResult<ProviderGeoIpInformation> {
         val url = join(apiEndpoint, "$PathPrefix/providers/$provider/$ipAddress")
 

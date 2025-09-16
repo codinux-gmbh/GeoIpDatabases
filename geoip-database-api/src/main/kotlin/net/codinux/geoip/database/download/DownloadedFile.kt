@@ -17,4 +17,7 @@ data class DownloadedFile(
 
     fun createInputStream(): InputStream =
         ByteArrayInputStream(bytes)
+
+    fun toModificationInfo() = FileModifiedInformation(lastModified, etag)
+
 }

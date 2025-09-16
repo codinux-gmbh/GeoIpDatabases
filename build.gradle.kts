@@ -6,7 +6,7 @@ allprojects {
 
 
     group = "net.codinux.geoip"
-    version = "0.5.0-RC1"
+    version = "0.5.0"
 
 
     ext["projectName"] = "GeoIP Databases"

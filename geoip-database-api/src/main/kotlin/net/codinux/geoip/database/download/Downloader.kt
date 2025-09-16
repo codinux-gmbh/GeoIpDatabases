@@ -3,10 +3,11 @@ package net.codinux.geoip.database.download
 import kotlinx.coroutines.runBlocking
 import net.codinux.geoip.database.compression.FileExtractor
 import net.codinux.log.logger
+import net.dankito.web.client.ContentTypes
+import net.dankito.web.client.RequestParameters
 import net.dankito.web.client.ResponseDetails
 import net.dankito.web.client.WebClient
-import net.dankito.web.client.get
-import net.dankito.web.client.head
+import net.dankito.web.client.WebClientResult
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
@@ -15,7 +16,6 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.io.path.createDirectories
 import kotlin.io.path.fileSize
-import kotlin.io.path.outputStream
 import kotlin.io.path.writeBytes
 
 open class Downloader(
@@ -58,21 +58,35 @@ open class Downloader(
     }
 
     protected open suspend fun downloadAsync(url: String): DownloadFileResult = try {
-        val response = webClient.get<ByteArray>(url)
+        val response = webClient.get(createRequest(url))
+        handleResponse(response, url)
+    } catch (e: Throwable) {
+        log.error(e) { "Could not download $databaseProvider database from '$url'" }
+        DownloadFileResult.error(e)
+    }
+
+    protected open fun createRequest(url: String) =
+        RequestParameters(url, ByteArray::class, accept = ContentTypes.Any)
+
+    protected open suspend fun handleResponse(response: WebClientResult<ByteArray>, url: String): DownloadFileResult =
         if (response.successfulAndBodySet) {
             val bytes = response.body!!
 
             val details = response.responseDetails!!
             DownloadFileResult.success(DownloadedFile(url, bytes, getFilename(url, details), details.contentType!!,
                 details.contentLength, details.getHeaderValue("Last-Modified")?.let { parseRfc1123DateTime(it) }, details.getHeaderValue("ETag")))
+        } else if (response.responseDetails?.isRedirectionResponse == true) {
+            val redirectLocation = response.responseDetails?.redirectLocation
+            if (redirectLocation != null) {
+                val redirectUrlResponse = webClient.get(createRequest(redirectLocation))
+                handleResponse(redirectUrlResponse, url)
+            } else {
+                DownloadFileResult.error(response.error)
+            }
         } else {
             log.error(response.error) { "Downloading $databaseProvider database '$url' failed: ${response.statusCode} ${response.error}" }
             DownloadFileResult.error(response.error)
         }
-    } catch (e: Throwable) {
-        log.error(e) { "Could not download $databaseProvider database from '$url'" }
-        DownloadFileResult.error(e)
-    }
 
     protected open fun getFilename(url: String, details: ResponseDetails): String {
         details.getHeaderValue("Content-Disposition")?.let { contentDisposition ->
@@ -158,7 +172,7 @@ open class Downloader(
         }
 
     suspend fun getFileModificationInfo(url: String): FileModifiedInformation {
-        val response = webClient.head(url)
+        val response = webClient.head(createRequest(url) as RequestParameters<Unit>)
 
         val lastModified = response.responseDetails?.getHeaderValue("Last-Modified")?.let {
             parseRfc1123DateTime(it)

@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package net.codinux.geoip.database.download
 
 import kotlinx.coroutines.runBlocking

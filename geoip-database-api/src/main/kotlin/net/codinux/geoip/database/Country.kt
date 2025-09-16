@@ -6,10 +6,18 @@ import kotlinx.serialization.Serializable
 open class Country(
     val isoCode: String,
     val name: String,
-    // sadly in GeoLite2 continent.code is sometimes null, so i cannot make it non-nullable
+    /**
+     * Not available for all GeoLite2 entries, but for IPLocate.
+     */
     // TODO: implement countryIsoCode -> continentCode lookup
     var continent: Continent?,
+    /**
+     * Only available for GeoLite2, not for IPLocate.
+     */
     val geoNameId: Long? = null,
+    /**
+     * Only available for GeoLite2, not for IPLocate.
+     */
     val isInEuropeanUnion: Boolean = false,
 ) {
     override fun toString() = "$isoCode $name ($continent)"

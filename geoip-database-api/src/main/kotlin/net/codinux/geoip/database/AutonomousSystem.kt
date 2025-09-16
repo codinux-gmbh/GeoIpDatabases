@@ -7,9 +7,17 @@ class AutonomousSystem(
     val autonomousSystemNumber: Long,
     val name: String,
 
-    // sadly these information are not set in GeoLite2 database:
+    /**
+     * Only available for IPLocate, not for GeoLite2.
+     */
     val organization: String? = null,
+    /**
+     * Only available for IPLocate, not for GeoLite2.
+     */
     val domain: String? = null,
+    /**
+     * Only available for IPLocate, not for GeoLite2.
+     */
     val countryCode: String? = null,
 ) {
     override fun toString() = "$autonomousSystemNumber $name"

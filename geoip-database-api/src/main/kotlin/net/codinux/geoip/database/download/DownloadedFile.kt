@@ -11,7 +11,7 @@ data class DownloadedFile(
     val contentType: String,
     val contentLength: Long? = null,
     val lastModified: Instant? = null,
-    val eTag: String? = null,
+    val etag: String? = null,
 ) {
     var sizeInBytes: Long = bytes.size.toLong()
 

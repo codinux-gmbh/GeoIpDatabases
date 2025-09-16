@@ -81,7 +81,7 @@ class IPLocateDatabaseDownloaderTest {
 
 
         // we now have the modification info of the current file, so no further attempt to download this file should be taken
-        val secondAttempt = underTest.downloadIfNewer(FileModifiedInformation(downloadedFile.lastModified, downloadedFile.eTag),
+        val secondAttempt = underTest.downloadIfNewer(FileModifiedInformation(downloadedFile.lastModified, downloadedFile.etag),
             destination, type, format)
 
         assertThat(secondAttempt::first).isFalse()

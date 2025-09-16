@@ -1,6 +1,5 @@
 package net.codinux.geoip.service.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import net.codinux.geoip.database.DatabaseFormat
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
@@ -36,7 +35,7 @@ data class GeoIpDatabaseFileState(
         downloadState = DownloadFileState.UpToDate
 
         lastModified = file.lastModified
-        etag = file.eTag
+        etag = file.etag
         lastDownloaded = Instant.now()
 
         filename = file.filename
@@ -58,4 +57,5 @@ data class GeoIpDatabaseFileState(
     }
 
     fun toModificationInfo() = FileModifiedInformation(lastModified, etag)
+
 }

@@ -129,9 +129,7 @@ class GeoIpResource(
         @PathParam("provider") provider: DatabaseProvider,
         @PathParam("ipAddress") ipAddress: String
     ): ProviderGeoIpInformation =
-        executeRequest {
-            service.lookupProviderGeoIpInformation(provider, ipAddress)
-        }
+        service.lookupProviderGeoIpInformation(provider, ipAddress)
 
 
     @GET

@@ -77,7 +77,7 @@ tasks.register<NpxTask>("runPostCSS") {
     args.addAll("src/main/resources/templates/css/*.css", "--dir", "src/main/resources/META-INF/resources/assets/css")
 }
 
-tasks.named("quarkusGenerateCode") {
+tasks.named("processResources") {
     dependsOn("runPostCSS")
 }
 

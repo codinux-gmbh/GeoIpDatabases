@@ -80,3 +80,33 @@ tasks.register<NpxTask>("runPostCSS") {
 tasks.named("quarkusGenerateCode") {
     dependsOn("runPostCSS")
 }
+
+
+val watchWebAppChangesTask = tasks.register("watchWebAppChanges") {
+    dependsOn("npmInstall")
+    group = "frontend"
+    description = "On each change to HTML and CSS files runs PostCSS and copies the result to src/resources/META-INF/resources"
+
+    doFirst {
+        // asynchronously start file watch that runs PostCSS on changes to HTML and CSS files and copies the result to src/resources/META-INF/resources
+        this.extra["process"] = ProcessBuilder()
+            .command("npm", "run", "watch")
+            .start()
+    }
+}
+
+val stopWatchingWebAppChangesTask = tasks.register("stopWatchingWebAppChanges") {
+    group = "frontend"
+    description = "Stops watching changes to HTML and CSS files"
+
+    doFirst {
+        // stop async file watch process again
+        (watchWebAppChangesTask.get().extra["process"] as? Process)?.destroy()
+    }
+}
+
+tasks.named("quarkusDev") {
+    dependsOn(watchWebAppChangesTask)
+
+    finalizedBy(stopWatchingWebAppChangesTask)
+}

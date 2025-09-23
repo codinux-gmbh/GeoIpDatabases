@@ -70,7 +70,7 @@ tasks.withType<Test> {
 
 tasks.register<NpxTask>("runPostCSS") {
     dependsOn("npmInstall")
-    group = "build"
+    group = "frontend"
     description = "Runs PostCSS to create Tailwind CSS file etc."
 
     command.set("postcss")

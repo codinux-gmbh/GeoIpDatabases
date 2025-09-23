@@ -1,7 +1,7 @@
 <div class="flex flex-col">
   <h3 class="mt-4 mb-1 text-base font-bold text-zinc-500">{name}</h3>
 
-  <div class="w-full p-3 text-center rounded-lg border {#when status.state}
+  <div class="w-full p-3 text-center whitespace-pre-wrap rounded-lg border {#when status.state}
     {#is NotAvailableForProvider}
       text-disabled border-disabled
     {#is DownloadDisabled}
@@ -12,7 +12,5 @@
       text-warn border-warn
     {#is UpToDate}
       text-ok border-ok
-  {/when}">
-    {status.displayMessage}
-  </div>
+  {/when}"> {status.displayMessage}</div>
 </div>

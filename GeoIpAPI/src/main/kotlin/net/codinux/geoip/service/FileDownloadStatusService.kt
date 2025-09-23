@@ -49,15 +49,15 @@ class FileDownloadStatusService(
 
     private fun getDisplayMessage(state: GeoIpDatabaseFileState): String = when (state.downloadState) {
         DownloadFileState.UpToDate -> "Successfully downloaded ${formatFileSize(state)} on ${formatTime(state.lastDownloaded)} " +
-                "to ${state.downloadPath?.absolutePathString()}."
+                "to\n${state.downloadPath?.absolutePathString()}."
         DownloadFileState.DownloadedButUpdateFailed ->
-            "Older file downloaded on ${formatTime(state.lastDownloaded)} to ${state.downloadPath?.absolutePathString()}, " +
-                    "but Update failed on ${formatTime(state.lastUpdateFailedTime)} with error: ${state.lastUpdateFailedErrorMessage}"
+            "Older file downloaded on ${formatTime(state.lastDownloaded)} to ${state.downloadPath?.absolutePathString()},\n" +
+                    "but Update failed on ${formatTime(state.lastUpdateFailedTime)} with error:\n${state.lastUpdateFailedErrorMessage}"
         DownloadFileState.NotAvailableForProvider -> "Not available for provider"
         DownloadFileState.DownloadDisabled -> "Download disabled"
         DownloadFileState.NotDownloadedYet -> {
             if (state.lastUpdateFailedErrorMessage != null) {
-                "Not downloaded yet, last Update failed on ${formatTime(state.lastUpdateFailedTime)} with error: ${state.lastUpdateFailedErrorMessage}"
+                "Not downloaded yet, last Update failed on ${formatTime(state.lastUpdateFailedTime)} with error:\n${state.lastUpdateFailedErrorMessage}"
             } else {
                 "Not downloaded"
             }

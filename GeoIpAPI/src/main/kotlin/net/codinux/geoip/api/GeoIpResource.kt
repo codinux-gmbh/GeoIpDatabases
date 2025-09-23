@@ -43,7 +43,9 @@ class GeoIpResource(
     @APIResponse(responseCode = "404", description = "No data for the supplied IP")
     fun lookupCallersCountry(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
-            service.lookupCountry(it)
+            mapResult {
+                service.lookupCountry(it)
+            }
         }
 
     @GET
@@ -69,7 +71,9 @@ class GeoIpResource(
     @APIResponse(responseCode = "501", description = "If the GeoIP database provider does not support looking up cities")
     fun lookupCallersCity(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
-            service.lookupCity(it)
+            mapResult {
+                service.lookupCity(it)
+            }
         }
 
     @GET
@@ -95,7 +99,9 @@ class GeoIpResource(
     @APIResponse(responseCode = "404", description = "No data for the supplied IP")
     fun lookupCallersAsn(@Context request: HttpServerRequest) =
         service.withCallerIp(request) {
-            service.lookupAsn(it)
+            mapResult {
+                service.lookupAsn(it)
+            }
         }
 
     @GET

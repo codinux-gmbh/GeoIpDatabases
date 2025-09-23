@@ -1,0 +1,24 @@
+<div class="w-full">
+  <h2 class="mt-6 mb-2 text-xl font-bold text-zinc-500">{title}</h2>
+
+  <div class="w-full p-3 text-center border {#when status.status}
+    {#is AllFilesUpToDate}
+      text-green-700 border-green-700
+    {#is AllFilesAtLeastDownloadedOnce}
+      text-orange-400 border-orange-400
+    {#else}text-red-600 border-red-600
+  {/when}">
+    {#when status.status}
+      {#is AllFilesUpToDate}
+        All {title} database files are up to date.
+      {#is AllFilesAtLeastDownloadedOnce}
+        All {title} database files downloaded at least once, but at least one file is not up to date.
+    {#else}
+      At least one {title} file failed to download.
+    {/when}
+  </div>
+
+  {#include file-download-status name="ASN" status=status.asn /}
+  {#include file-download-status name="Country" status=status.country /}
+  {#include file-download-status name="City" status=status.city /}
+</div>

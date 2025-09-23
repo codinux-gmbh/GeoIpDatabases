@@ -14,7 +14,7 @@ class StatusResource(
 ) {
 
     @GET
-    @Path("/status")
+    @Path(PathsConfig.StatusSubPath)
     fun getFileDownloadStatus(): ProvidersFileDownloadStatus =
         service.determineFileDownloadStatus()
 

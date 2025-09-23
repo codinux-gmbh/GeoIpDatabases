@@ -1,0 +1,18 @@
+<div class="flex flex-col">
+  <h3 class="mt-4 mb-1 text-base font-bold text-zinc-500">{name}</h3>
+
+  <div class="w-full p-3 text-center border {#when status.state}
+    {#is NotAvailableForProvider}
+      text-neutral-400 border-neutral-400
+    {#is DownloadDisabled}
+      text-neutral-400 border-neutral-400
+    {#is NotDownloadedYet}
+      text-red-600 border-red-600
+    {#is DownloadedButUpdateFailed}
+      text-orange-400 border-orange-400
+    {#is UpToDate}
+      text-green-700 border-green-700
+  {/when}">
+    {status.displayMessage}
+  </div>
+</div>

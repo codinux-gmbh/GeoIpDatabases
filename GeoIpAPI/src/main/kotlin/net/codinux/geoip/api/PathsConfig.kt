@@ -4,4 +4,6 @@ object PathsConfig {
 
     const val ApiBasePath = "/api/v1"
 
+    const val StatusSubPath = "/status"
+
 }

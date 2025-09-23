@@ -48,7 +48,9 @@ class FileDownloadStatusService(
         DownloadFileState.UpToDate -> "Successfully downloaded at ${formatTime(state.lastDownloaded)}"
         DownloadFileState.DownloadedButUpdateFailed ->
             "Older file downloaded, but Update failed at ${formatTime(state.lastUpdateFailedTime)} with error: ${state.lastUpdateFailedErrorMessage}"
-        else -> {
+        DownloadFileState.NotAvailableForProvider -> "Not available for provider"
+        DownloadFileState.DownloadDisabled -> "Download disabled"
+        DownloadFileState.NotDownloadedYet -> {
             if (state.lastUpdateFailedErrorMessage != null) {
                 "Not downloaded yet, last Update failed at ${formatTime(state.lastUpdateFailedTime)} with error: ${state.lastUpdateFailedErrorMessage}"
             } else {

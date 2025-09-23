@@ -5,11 +5,11 @@
 
     <div class="w-full h-[70px] mt-4 p-3 flex items-center justify-center text-lg border {#when status}
       {#is AllFilesUpToDate}
-        text-green-700 border-green-700
+        text-ok border-ok
       {#is AllFilesAtLeastDownloadedOnce}
-        text-orange-400 border-orange-400
+        text-warn border-warn
       {#else}
-        text-red-600 border-red-600
+        text-error border-error
     {/when}">
       {#when status}
         {#is AllFilesUpToDate}

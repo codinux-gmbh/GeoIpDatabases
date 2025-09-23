@@ -3,15 +3,15 @@
 
   <div class="w-full p-3 text-center border {#when status.state}
     {#is NotAvailableForProvider}
-      text-neutral-400 border-neutral-400
+      text-disabled border-disabled
     {#is DownloadDisabled}
-      text-neutral-400 border-neutral-400
+      text-disabled border-disabled
     {#is NotDownloadedYet}
-      text-red-600 border-red-600
+      text-error border-error
     {#is DownloadedButUpdateFailed}
-      text-orange-400 border-orange-400
+      text-warn border-warn
     {#is UpToDate}
-      text-green-700 border-green-700
+      text-ok border-ok
   {/when}">
     {status.displayMessage}
   </div>

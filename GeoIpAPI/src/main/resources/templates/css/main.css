@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+
+@theme {
+    --color-ok: var(--color-green-700);
+    --color-warn: var(--color-orange-400);
+    --color-error: var(--color-red-600);
+    --color-disabled: var(--color-neutral-400);
+}

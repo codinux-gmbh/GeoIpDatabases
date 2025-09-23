@@ -3,10 +3,10 @@
 
   <div class="w-full p-3 text-center border {#when status.status}
     {#is AllFilesUpToDate}
-      text-green-700 border-green-700
+      text-ok border-ok
     {#is AllFilesAtLeastDownloadedOnce}
-      text-orange-400 border-orange-400
-    {#else}text-red-600 border-red-600
+      text-warn border-warn
+    {#else}text-error border-error
   {/when}">
     {#when status.status}
       {#is AllFilesUpToDate}

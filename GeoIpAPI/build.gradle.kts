@@ -1,7 +1,11 @@
+import com.github.gradle.node.npm.task.NpxTask
+
 plugins {
     kotlin("jvm")
     kotlin("plugin.allopen")
     id("io.quarkus")
+
+    id("com.github.node-gradle.node") version "7.1.0"
 }
 
 
@@ -61,4 +65,18 @@ allOpen {
 
 tasks.withType<Test> {
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+}
+
+
+tasks.register<NpxTask>("runPostCSS") {
+    dependsOn("npmInstall")
+    group = "build"
+    description = "Runs PostCSS to create Tailwind CSS file etc."
+
+    command.set("postcss")
+    args.addAll("src/main/resources/templates/css/*.css", "--dir", "src/main/resources/META-INF/resources/assets/css")
+}
+
+tasks.named("quarkusGenerateCode") {
+    dependsOn("runPostCSS")
 }

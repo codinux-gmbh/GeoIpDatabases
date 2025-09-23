@@ -12,3 +12,8 @@
 
 .DS_Store
 .externalNativeBuild
+
+
+**/node_modules
+# auto-generated HTML / CSS files
+GeoIpAPI/src/main/resources/META-INF/resources

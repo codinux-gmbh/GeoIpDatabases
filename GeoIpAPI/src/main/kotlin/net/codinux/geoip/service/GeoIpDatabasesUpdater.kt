@@ -9,6 +9,7 @@ import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.config.GeoLite2Config
 import net.codinux.geoip.config.IPLocateConfig
 import net.codinux.geoip.database.DatabaseProvider
+import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.database.download.DownloadAndExtractFilesResult
 import net.codinux.geoip.database.download.DownloadAndSaveFileResult
 import net.codinux.geoip.database.download.DownloadedFile
@@ -105,9 +106,28 @@ class GeoIpDatabasesUpdater(
         launch { updateGeoLite2Databases(config.geoLite2, forceDownload) }
     }
 
+    suspend fun updateDatabase(provider: DatabaseProvider, type: DatabaseType, forceDownload: Boolean = false) = when (provider) {
+        DatabaseProvider.IPLocate -> updateIPLocateDatabase(type, forceDownload)
+        DatabaseProvider.GeoLite2 -> updateGeoLite2Database(type, forceDownload)
+    }
+
 
     suspend fun updateIPLocateDatabases(forceDownload: Boolean = false) {
         updateIPLocateDatabases(config.ipLocate, forceDownload)
+    }
+
+    private suspend fun updateIPLocateDatabase(type: DatabaseType, forceDownload: Boolean) = withContext(Dispatchers.IO) {
+        val job = when (type) {
+            DatabaseType.ASN -> downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.asn, forceDownload)
+            DatabaseType.Country -> downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.country, forceDownload)
+            else -> null
+        }
+
+        val result = job?.await()
+        if (result != null && result.successful && result.savedTo != null) {
+            moveTempFilesAtomicallyInPlace(listOf(result.savedTo!!))
+            providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.IPLocate, true, state))
+        }
     }
 
     private suspend fun updateIPLocateDatabases(config: IPLocateConfig, forceDownload: Boolean = false) = with (config) { withContext(Dispatchers.IO) {
@@ -210,6 +230,25 @@ class GeoIpDatabasesUpdater(
         // files have been downloaded to temp files. Now move them atomically in place and update DatabaseReaders
         moveTempFilesAtomicallyInPlace(successfulResults.flatMap { it.extractedTo })
         providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, successfulResults.isNotEmpty(), state))
+    }
+
+    private suspend fun updateGeoLite2Database(type: DatabaseType, forceDownload: Boolean) = withContext(Dispatchers.IO) {
+        val downloader = geoLite2Downloader
+        if (config.geoLite2.download == false || downloader == null) {
+            return@withContext
+        }
+
+        val job = when (type) {
+            DatabaseType.ASN -> downloadGeoLite2Database(downloader, state.ipLocate.asn, forceDownload)
+            DatabaseType.Country -> downloadGeoLite2Database(downloader, state.ipLocate.country, forceDownload)
+            DatabaseType.City -> downloadGeoLite2Database(downloader, state.geoLite2.city, forceDownload)
+        }
+
+        val result = job.await()
+        if (result != null && result.successful && result.extractedTo.isNotEmpty()) {
+            moveTempFilesAtomicallyInPlace(result.extractedTo)
+            providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, true, state))
+        }
     }
 
     private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, state: GeoIpDatabaseFileState, forceDownload: Boolean = false) = async {

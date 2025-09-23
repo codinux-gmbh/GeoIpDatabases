@@ -66,6 +66,8 @@ class GeoIpDatabasesUpdater(
 
     @Scheduled(every = "6h")
     fun periodicalFilesUpdateCheck() {
+        log.info { "Checking for database updates ..." }
+
         updateDatabases()
     }
 
@@ -97,26 +99,28 @@ class GeoIpDatabasesUpdater(
         }
     }
 
-    private fun updateDatabases() = coroutineScope.launch {
-        log.info { "Checking for database updates ..." }
+    fun updateDatabases(forceDownload: Boolean = false) = coroutineScope.launch {
+        launch { updateIPLocateDatabases(config.ipLocate, forceDownload) }
 
-        launch { updateIPLocateDatabases(config.ipLocate) }
-
-        launch { updateGeoLite2Databases(config.geoLite2) }
+        launch { updateGeoLite2Databases(config.geoLite2, forceDownload) }
     }
 
 
-    private suspend fun updateIPLocateDatabases(config: IPLocateConfig) = with (config) { withContext(Dispatchers.IO) {
+    suspend fun updateIPLocateDatabases(forceDownload: Boolean = false) {
+        updateIPLocateDatabases(config.ipLocate, forceDownload)
+    }
+
+    private suspend fun updateIPLocateDatabases(config: IPLocateConfig, forceDownload: Boolean = false) = with (config) { withContext(Dispatchers.IO) {
         try {
             if (download && (asnPath != null || countryPath != null)) {
                 val jobs = mutableListOf<Deferred<DownloadAndSaveFileResult?>>()
 
                 if (asnPath != null) {
-                    jobs.add(downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.asn))
+                    jobs.add(downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.asn, forceDownload))
                 }
 
                 if (countryPath != null) {
-                    jobs.add(downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.country))
+                    jobs.add(downloadIPLocateDatabase(ipLocateDownloader, state.ipLocate.country, forceDownload))
                 }
 
                 val results = jobs.awaitAll().filterNotNull()
@@ -131,9 +135,10 @@ class GeoIpDatabasesUpdater(
         }
     } }
 
-    private suspend fun CoroutineScope.downloadIPLocateDatabase(downloader: IPLocateDatabaseDownloader, state: GeoIpDatabaseFileState) = async {
+    private suspend fun CoroutineScope.downloadIPLocateDatabase(downloader: IPLocateDatabaseDownloader, state: GeoIpDatabaseFileState, forceDownload: Boolean = false) = async {
         // save file to temp file and after all databases have been downloaded move them atomically in place
-        val (hasNewer, result) = downloader.downloadIfNewer(state.toModificationInfo(), tempFile(state.downloadPath!!), state.type, state.format)
+        val (hasNewer, result) = if (forceDownload) true to downloader.downloadToAsync(tempFile(state.downloadPath!!), state.type, state.format)
+            else downloader.downloadIfNewer(state.toModificationInfo(), tempFile(state.downloadPath!!), state.type, state.format)
         val success = result != null && result.successful
         if (success) {
             val downloadedFile = result.downloadedFile!!
@@ -154,7 +159,11 @@ class GeoIpDatabasesUpdater(
     }
 
 
-    private suspend fun updateGeoLite2Databases(config: GeoLite2Config) = with (config) {
+    fun updateGeoLite2Databases(forceDownload: Boolean = false) = runBlocking {
+        updateGeoLite2Databases(config.geoLite2, forceDownload)
+    }
+
+    private suspend fun updateGeoLite2Databases(config: GeoLite2Config, forceDownload: Boolean = false) = with (config) {
         try {
             if (download && (asnPath != null || countryPath != null || cityPath != null)) {
                 if (accountId == null || licenseKey == null) {
@@ -173,26 +182,26 @@ class GeoIpDatabasesUpdater(
                     return
                 }
 
-                updateGeoLite2Databases(geoLite2Downloader!!, asnPath, countryPath, cityPath)
+                updateGeoLite2Databases(geoLite2Downloader!!, asnPath, countryPath, cityPath, forceDownload)
             }
         } catch (e: Throwable) {
             log.error(e) { "Could not update GeoLite2 databases" }
         }
     }
 
-    private suspend fun updateGeoLite2Databases(downloader: GeoLite2DatabaseDownloader, asnPath: Path?, countryPath: Path?, cityPath: Path?) = withContext(Dispatchers.IO) {
+    private suspend fun updateGeoLite2Databases(downloader: GeoLite2DatabaseDownloader, asnPath: Path?, countryPath: Path?, cityPath: Path?, forceDownload: Boolean = false) = withContext(Dispatchers.IO) {
         val jobs = mutableListOf<Deferred<DownloadAndExtractFilesResult?>>()
 
         if (asnPath != null) {
-            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.asn))
+            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.asn, forceDownload))
         }
 
         if (countryPath != null) {
-            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.country))
+            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.country, forceDownload))
         }
 
         if (cityPath != null) {
-            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.city))
+            jobs.add(downloadGeoLite2Database(downloader, state.geoLite2.city, forceDownload))
         }
 
         val results = jobs.awaitAll().filterNotNull()
@@ -203,9 +212,10 @@ class GeoIpDatabasesUpdater(
         providerDatabasesDownloadEvent.fire(ProviderDatabasesDownloadResultEvent(DatabaseProvider.GeoLite2, successfulResults.isNotEmpty(), state))
     }
 
-    private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, state: GeoIpDatabaseFileState) = async {
+    private suspend fun CoroutineScope.downloadGeoLite2Database(downloader: GeoLite2DatabaseDownloader, state: GeoIpDatabaseFileState, forceDownload: Boolean = false) = async {
         // save file to temp file and after all databases have been downloaded move them atomically in place
-        val (hasNewer, result) = downloader.downloadIfNewer(state.toModificationInfo(), tempFile(state.downloadPath!!), state.type, state.format)
+        val (hasNewer, result) = if (forceDownload) true to downloader.downloadTo(tempFile(state.downloadPath!!), state.type, state.format)
+            else downloader.downloadIfNewer(state.toModificationInfo(), tempFile(state.downloadPath!!), state.type, state.format)
         val success = result != null && result.successful
         if (success) {
             val downloadedFile = result.downloadedFile!!

@@ -38,6 +38,10 @@ open class IPLocateDatabaseDownloader(
     override fun checkIfIsNewer(local: FileModifiedInformation, retrieved: FileModifiedInformation): Boolean =
         local.etag == null || local.etag != retrieved.etag
 
+
+    open suspend fun downloadToAsync(downloadTo: Path, type: DatabaseType, format: DatabaseFormat) =
+        downloadToAsync(getUrl(type, format), downloadTo)
+
     open suspend fun downloadMaxMindDatabaseToAsync(downloadTo: Path, type: DatabaseType) = when (type) {
         DatabaseType.ASN -> downloadIpToAsnMaxMindDatabaseAsync(downloadTo)
         DatabaseType.Country -> downloadIpToCountryMaxMindDatabaseAsync(downloadTo)

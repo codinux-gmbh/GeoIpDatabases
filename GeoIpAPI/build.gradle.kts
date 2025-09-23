@@ -20,6 +20,8 @@ val klfVersion: String by project
 val logFormatterVersion: String by project
 val lokiLoggerVersion: String by project
 
+val assertKVersion: String by project
+
 dependencies {
     implementation(enforcedPlatform("io.quarkus.platform:quarkus-bom:$quarkusVersion"))
     implementation("io.quarkus:quarkus-kotlin")
@@ -44,6 +46,8 @@ dependencies {
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
+
+    testImplementation("com.willowtreeapps.assertk:assertk:$assertKVersion")
 }
 
 

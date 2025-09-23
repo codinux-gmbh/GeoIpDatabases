@@ -6,6 +6,7 @@ import net.codinux.geoip.config.GeoIpConfig
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.event.DatabaseFileUpdateAttemptEvent
+import net.codinux.geoip.service.format.DateTimeFormatter
 import net.codinux.geoip.service.model.DownloadFileState
 import net.codinux.geoip.service.model.GeoIpDatabaseFileState
 import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
@@ -14,9 +15,6 @@ import org.eclipse.microprofile.health.HealthCheckResponse
 import org.eclipse.microprofile.health.Startup
 import java.nio.file.Path
 import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -24,12 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 @Singleton
 class DatabaseFilesDownloadedStartupHealthCheck(
     private val config: GeoIpConfig,
+    private val dateTimeFormatter: DateTimeFormatter,
 ) : HealthCheck {
-
-    companion object {
-        private val dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)
-    }
-
 
     private val allDatabaseFilesTriedToDownload = AtomicBoolean(false)
 
@@ -108,10 +102,6 @@ class DatabaseFilesDownloadedStartupHealthCheck(
         }
 
     private fun formatTime(time: Instant?): String =
-        if (time == null) {
-            "-"
-        } else {
-            dateTimeFormatter.format(time.atZone(ZoneId.systemDefault()).toLocalDateTime())
-        }
+        dateTimeFormatter.formatDateTime(time)
 
 }

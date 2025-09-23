@@ -27,7 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 
 // To compare data model with GeoLite2's / GeoIP's REST data model, see https://dev.maxmind.com/geoip/docs/web-services/responses/
-@Path("/api/v1")
+@Path(PathsConfig.ApiBasePath)
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 class GeoIpResource(

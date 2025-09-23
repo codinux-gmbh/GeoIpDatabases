@@ -11,6 +11,7 @@ import net.codinux.geoip.config.IPLocateConfig
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.download.DownloadAndExtractFilesResult
 import net.codinux.geoip.database.download.DownloadAndSaveFileResult
+import net.codinux.geoip.database.download.DownloadedFile
 import net.codinux.geoip.database.geolite2.GeoLite2DatabaseDownloader
 import net.codinux.geoip.database.iplocate.IPLocateDatabaseDownloader
 import net.codinux.geoip.event.DatabaseFileUpdateAttemptEvent
@@ -34,7 +35,8 @@ class GeoIpDatabasesUpdater(
     private val config: GeoIpConfig,
     private val state: GeoIpProvidersDatabaseFileState,
     private val updateAttemptEvent: Event<DatabaseFileUpdateAttemptEvent>,
-    private val providerDatabasesDownloadEvent: Event<ProviderDatabasesDownloadResultEvent>
+    private val providerDatabasesDownloadEvent: Event<ProviderDatabasesDownloadResultEvent>,
+    private val formatter: ByteSizeFormatter,
 ) {
 
     companion object {
@@ -138,7 +140,7 @@ class GeoIpDatabasesUpdater(
             // TODO: too early? wait till temp file has been moved into place?
             state.update(downloadedFile)
 
-            log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.sizeInBytes} bytes to ${state.downloadPath}" }
+            log.info { "Downloaded ${state.provider} ${state.type} database with ${formatFileSize(downloadedFile)} to ${state.downloadPath}" }
         } else if (hasNewer) { // error is logged in downloadAsync() and downloadToAsync()
             state.updateDownloadFailed(getErrorMessage(result?.error))
         } else {
@@ -210,7 +212,7 @@ class GeoIpDatabasesUpdater(
             // TODO: too early? wait till temp file has been moved into place?
             state.update(downloadedFile)
 
-            log.info { "Downloaded ${state.provider} ${state.type} database with ${downloadedFile.sizeInBytes} bytes to ${state.downloadPath}" }
+            log.info { "Downloaded ${state.provider} ${state.type} database with ${formatFileSize(downloadedFile)} to ${state.downloadPath}" }
         } else if (hasNewer) { // error is logged in downloadAsync() and downloadToAsync()
             state.updateDownloadFailed(getErrorMessage(result?.errors?.firstOrNull()))
         } else {
@@ -238,6 +240,9 @@ class GeoIpDatabasesUpdater(
 
         "${rootCause.messageLine} as ${rootCause.stackTrace.firstOrNull()?.line ?: rootCause.causedBy?.stackTrace?.firstOrNull()?.line ?: "-"}" // TODO: add Exception class
     }
+
+    private fun formatFileSize(downloadedFile: DownloadedFile) =
+        formatter.formatFileSize(downloadedFile.sizeInBytes)
 
 
     private fun tempFile(path: Path): Path = path.parent.resolve(path.name + ".tmp")

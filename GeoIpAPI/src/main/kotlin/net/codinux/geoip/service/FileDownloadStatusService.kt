@@ -12,11 +12,13 @@ import net.codinux.geoip.service.model.status.ProviderFileDownloadStatus
 import net.codinux.geoip.service.model.status.ProvidersFileDownloadStatus
 import java.time.Instant
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.fileSize
 
 @Singleton
 class FileDownloadStatusService(
     private val state: GeoIpProvidersDatabaseFileState,
     private val dateTimeFormatter: DateTimeFormatter,
+    private val byteSizeFormatter: ByteSizeFormatter,
 ) {
 
     fun determineFileDownloadStatus(): ProvidersFileDownloadStatus {
@@ -46,14 +48,16 @@ class FileDownloadStatusService(
     )
 
     private fun getDisplayMessage(state: GeoIpDatabaseFileState): String = when (state.downloadState) {
-        DownloadFileState.UpToDate -> "Successfully downloaded at ${formatTime(state.lastDownloaded)}"
+        DownloadFileState.UpToDate -> "Successfully downloaded ${formatFileSize(state)} on ${formatTime(state.lastDownloaded)} " +
+                "to ${state.downloadPath?.absolutePathString()}."
         DownloadFileState.DownloadedButUpdateFailed ->
-            "Older file downloaded, but Update failed at ${formatTime(state.lastUpdateFailedTime)} with error: ${state.lastUpdateFailedErrorMessage}"
+            "Older file downloaded on ${formatTime(state.lastDownloaded)} to ${state.downloadPath?.absolutePathString()}, " +
+                    "but Update failed on ${formatTime(state.lastUpdateFailedTime)} with error: ${state.lastUpdateFailedErrorMessage}"
         DownloadFileState.NotAvailableForProvider -> "Not available for provider"
         DownloadFileState.DownloadDisabled -> "Download disabled"
         DownloadFileState.NotDownloadedYet -> {
             if (state.lastUpdateFailedErrorMessage != null) {
-                "Not downloaded yet, last Update failed at ${formatTime(state.lastUpdateFailedTime)} with error: ${state.lastUpdateFailedErrorMessage}"
+                "Not downloaded yet, last Update failed on ${formatTime(state.lastUpdateFailedTime)} with error: ${state.lastUpdateFailedErrorMessage}"
             } else {
                 "Not downloaded"
             }
@@ -62,6 +66,9 @@ class FileDownloadStatusService(
 
     private fun formatTime(time: Instant?): String =
         dateTimeFormatter.formatDateTime(time)
+
+    private fun formatFileSize(state: GeoIpDatabaseFileState): String =
+        byteSizeFormatter.formatFileSize(state.downloadPath?.fileSize() ?: state.contentLength ?: 0L)
 
     private fun getAggregatedStatus(vararg status: FileDownloadStatus): AggregatedFileDownloadStatus =
         if (status.all { it.state in listOf(DownloadFileState.UpToDate, DownloadFileState.DownloadDisabled, DownloadFileState.NotAvailableForProvider) }) {

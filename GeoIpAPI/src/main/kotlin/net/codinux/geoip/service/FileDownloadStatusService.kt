@@ -11,6 +11,7 @@ import net.codinux.geoip.service.model.status.FileDownloadStatus
 import net.codinux.geoip.service.model.status.ProviderFileDownloadStatus
 import net.codinux.geoip.service.model.status.ProvidersFileDownloadStatus
 import java.time.Instant
+import kotlin.io.path.absolutePathString
 
 @Singleton
 class FileDownloadStatusService(
@@ -38,7 +39,7 @@ class FileDownloadStatusService(
     private fun mapFileDownloadStatus(state: GeoIpDatabaseFileState) = FileDownloadStatus(
         state.downloadState,
         getDisplayMessage(state),
-        state.downloadPath,
+        state.downloadPath?.absolutePathString(),
         state.lastDownloaded,
         state.lastUpdateFailedTime,
         state.lastUpdateFailedErrorMessage

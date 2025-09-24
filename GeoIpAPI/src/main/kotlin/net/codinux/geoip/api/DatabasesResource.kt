@@ -10,10 +10,12 @@ import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.service.model.DownloadFileState
 import net.codinux.geoip.service.model.GeoIpProvidersDatabaseFileState
+import org.eclipse.microprofile.openapi.annotations.tags.Tag
 import kotlin.io.path.readBytes
 
 @Path(PathsConfig.ApiBasePath)
 @Produces(MediaType.APPLICATION_OCTET_STREAM)
+@Tag(name = TagsConfig.DatabaseResourceTagName, description = "Download the GeoIP databases used by this application, for example, for diagnostic purposes.")
 class DatabasesResource(
     private val state: GeoIpProvidersDatabaseFileState,
 ) {

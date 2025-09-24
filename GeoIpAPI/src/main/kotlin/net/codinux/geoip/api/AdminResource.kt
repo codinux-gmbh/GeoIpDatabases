@@ -7,8 +7,11 @@ import jakarta.ws.rs.QueryParam
 import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.service.GeoIpDatabasesUpdater
+import org.eclipse.microprofile.openapi.annotations.tags.Tag
 
 @Path(PathsConfig.AdminBasePath)
+@Tag(name = TagsConfig.AdminResourceTagName, description = "Not admin endpoints in the traditional sense, they are used to force a GeoIP database update. " +
+        "They are disabled by default; to enable them, set the environment variable GEOIP_ADMIN_ENABLED to true.")
 class AdminResource(
     private val updater: GeoIpDatabasesUpdater,
 ) {

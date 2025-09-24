@@ -8,7 +8,7 @@ import net.codinux.geoip.database.DatabaseProvider
 import net.codinux.geoip.database.DatabaseType
 import net.codinux.geoip.service.GeoIpDatabasesUpdater
 
-@Path(PathsConfig.ApiBasePath + "/admin")
+@Path(PathsConfig.AdminBasePath)
 class AdminResource(
     private val updater: GeoIpDatabasesUpdater,
 ) {

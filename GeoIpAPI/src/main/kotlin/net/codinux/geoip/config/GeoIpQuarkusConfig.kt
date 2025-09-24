@@ -15,6 +15,8 @@ interface GeoIpQuarkusConfig {
     @WithDefault("/var/lib/geoip")
     fun dataFolder(): String
 
+    fun admin(): GeoIpAdminQuarkusConfig
+
     @WithName("iplocate")
     fun ipLocate(): IPLocateQuarkusConfig
 
@@ -50,4 +52,9 @@ interface GeoLite2QuarkusConfig {
 
     @WithDefault("geolite2/GeoLite2-City.mmdb")
     fun city(): Optional<String>
+}
+
+interface GeoIpAdminQuarkusConfig {
+    @WithDefault("false")
+    fun enabled(): Boolean
 }

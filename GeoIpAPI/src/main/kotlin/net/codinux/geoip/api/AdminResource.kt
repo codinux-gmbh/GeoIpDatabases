@@ -18,13 +18,13 @@ class AdminResource(
 
     @POST
     @Path("/databases/update")
-    fun downloadAllDatabases(@QueryParam("force") forceDownload: Boolean = false) {
+    fun updateAllDatabases(@QueryParam("force") forceDownload: Boolean = false) {
         updater.updateDatabases(forceDownload)
     }
 
     @POST
     @Path("/databases/{provider}/update")
-    suspend fun downloadAllDatabasesOfProvider(
+    suspend fun updateAllDatabasesOfProvider(
         @PathParam("provider") provider: DatabaseProvider,
         @QueryParam("force") forceDownload: Boolean = false
     ) = when (provider) {
@@ -34,7 +34,7 @@ class AdminResource(
 
     @POST
     @Path("/databases/{provider}/{databaseType}/update")
-    suspend fun downloadDatabase(
+    suspend fun updateDatabase(
         @PathParam("provider") provider: DatabaseProvider,
         @PathParam("databaseType") type: DatabaseType,
         @QueryParam("force") forceDownload: Boolean = false

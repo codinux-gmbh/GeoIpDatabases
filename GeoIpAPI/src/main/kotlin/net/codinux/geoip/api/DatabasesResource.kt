@@ -36,15 +36,18 @@ class DatabasesResource(
         }
 
         return when (fileState.downloadState) {
-            DownloadFileState.NotAvailableForProvider -> Response.status(Response.Status.NOT_FOUND)
-                .entity("$provider has no $type GeoIP database").type(MediaType.TEXT_PLAIN)
-            DownloadFileState.DownloadDisabled -> Response.status(Response.Status.NOT_FOUND)
-                .entity("Download of $provider $type GeoIP database has been disabled by config").type(MediaType.TEXT_PLAIN)
-            DownloadFileState.NotDownloadedYet -> Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                .entity("$provider $type GeoIP database was been configured for download but has not been downloaded yet").type(MediaType.TEXT_PLAIN)
+            DownloadFileState.NotAvailableForProvider -> errorResponse(Response.Status.NOT_FOUND, "$provider has no $type GeoIP database")
+            DownloadFileState.DownloadDisabled -> errorResponse(Response.Status.NOT_FOUND,
+                "Download of $provider $type GeoIP database has been disabled by config")
+            DownloadFileState.NotDownloadedYet -> errorResponse(Response.Status.SERVICE_UNAVAILABLE,
+                "$provider $type GeoIP database was been configured for download but has not been downloaded yet")
             DownloadFileState.UpToDate, DownloadFileState.DownloadedButUpdateFailed -> Response
                 .ok(fileState.downloadPath?.readBytes() ?: ByteArray(0))
         }.build()
     }
+
+
+    private fun errorResponse(status: Response.Status, responseBody: String): Response.ResponseBuilder =
+        Response.status(status).entity(responseBody).type(MediaType.TEXT_PLAIN)
 
 }

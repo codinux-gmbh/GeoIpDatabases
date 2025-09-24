@@ -25,11 +25,13 @@ import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
+import org.eclipse.microprofile.openapi.annotations.tags.Tag
 
 // To compare data model with GeoLite2's / GeoIP's REST data model, see https://dev.maxmind.com/geoip/docs/web-services/responses/
 @Path(PathsConfig.ApiBasePath)
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
+@Tag(name = TagsConfig.GeoIpResourceTagName, description = "Query available GeoIP databases.")
 class GeoIpResource(
     private val service: GeoIpService,
 ) {
